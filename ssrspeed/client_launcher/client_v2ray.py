@@ -30,9 +30,9 @@ class V2Ray(BaseClient):
 					logger.info("Starting v2ray-core with server %s:%d" % (config["server"],config["server_port"]))
 				elif(self._checkPlatform() == "Linux" or self._checkPlatform() == "MacOS"):
 					if (logger.level == logging.DEBUG):
-						self._process = subprocess.Popen(["./clients/v2ray-core/v2ray","--config","%s/config.json" % os.getcwd()])
+						self._process = subprocess.Popen(["./clients/v2ray-core/v2ray","run","-c","%s/config.json" % os.getcwd()])
 					else:
-						self._process = subprocess.Popen(["./clients/v2ray-core/v2ray","--config","%s/config.json" % os.getcwd()],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+						self._process = subprocess.Popen(["./clients/v2ray-core/v2ray","run","-c","%s/config.json" % os.getcwd()],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 					logger.info("Starting v2ray-core with server %s:%d" % (config["server"],config["server_port"]))
 				else:
 					logger.critical("Your system does not supported.Please contact developer.")

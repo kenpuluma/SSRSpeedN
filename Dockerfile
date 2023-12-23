@@ -19,6 +19,7 @@ RUN git clone https://github.com/shadowsocks/simple-obfs.git
 RUN cd simple-obfs && git submodule update --init --recursive && ./autogen.sh && ./configure && make && make install
 RUN ln -s /usr/local/bin/obfs-local /usr/local/bin/simple-obfs
 RUN mkdir /app/subscription /app/results /app/logs && touch /app/logs/cron.log
+RUN chmod +x /app/clients/v2ray-core/v2ray
 
 CMD ["cron", "-f"]
 VOLUME ["/app/subscription", "/app/results", "/app/logs"]
