@@ -77,11 +77,11 @@ class UniversalParser:
 				#Shadowsocks
 				cfg = None
 				try:
-					pssb = ParserShadowsocksBasic(self.__get_ss_base_config())
-					cfg = pssb.parse_single_link(link)
-				except ValueError:
 					pssip002 = ParserShadowsocksSIP002(self.__get_ss_base_config())
 					cfg = pssip002.parse_single_link(link)
+				except ValueError:
+					pssb = ParserShadowsocksBasic(self.__get_ss_base_config())
+					cfg = pssb.parse_single_link(link)
 				if cfg:
 					node = NodeShadowsocks(cfg)
 				else:

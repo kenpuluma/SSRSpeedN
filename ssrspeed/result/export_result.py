@@ -670,10 +670,14 @@ class ExportResult(object):
 		else:
 			t2 = ""
 
-		with open(r'test.txt', 'a+', encoding='utf-8') as test:
-			test.seek(0, 0)
-			url = test.readline()
-			sum0 = int(test.readline())
+		try:
+			with open(r'test.txt', 'a+', encoding='utf-8') as test:
+				test.seek(0, 0)
+				url = test.readline()
+				sum0 = int(test.readline())
+		except:
+			url = ""
+			sum0 = 0
 		os.remove(r'test.txt')
 
 		if not self.__hide_speed:

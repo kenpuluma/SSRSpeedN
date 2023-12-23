@@ -1,5 +1,5 @@
 six
-pillow
+pillow==9.5.0
 requests
 requests[socks]
 pysocks

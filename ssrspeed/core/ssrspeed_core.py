@@ -160,19 +160,26 @@ class SSRSpeedCore(object):
 					  color: str = "origin",
 					  sort_method: str = "",
 					  url: str = "",
+					  url_filename: str = "",
 					  cfg_filename: str = ""
 					  ):
 		self.testMethod = test_method
 		self.testMode = test_mode
 		self.sortMethod = sort_method
 		self.colors = color
-		r = requests.get(url)
-		if (len(r.content) < 200):
-			url = decrypt(url)
 		if self.__parser:
 			if cfg_filename:
 				self.__parser.read_gui_config(cfg_filename)
+			elif url_filename:
+				import re
+				raw_data = ""
+				with open(url_filename, "r", encoding="utf-8") as f:
+					raw_data = f.read()
+					self.__parser.read_subscription(re.split(r'\r\n|\r|\n', raw_data))
 			elif url:
+				r = requests.get(url)
+				if (len(r.content) < 200):
+					url = decrypt(url)
 				self.__parser.read_subscription(url.split(" "))
 			else:
 				raise ValueError("Subscription URL or configuration file must be set !")

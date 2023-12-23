@@ -40,6 +40,7 @@ if (__name__ == "__main__"):
 	CONFIG_LOAD_MODE = 0 #0 for import result,1 for guiconfig,2 for subscription url
 	CONFIG_FILENAME = ""
 	CONFIG_URL = ""
+	CONFIG_URL_FILENAME = ""
 	IMPORT_FILENAME = ""
 	FILTER_KEYWORD = []
 	FILTER_GROUP_KRYWORD = []
@@ -74,7 +75,6 @@ if (__name__ == "__main__"):
 	print("****** Import Hint 重要提示******")
 	print("ChenBilly yyds！")
 	print("*********************************")
-	input("Press ENTER to conitnue or Crtl+C to exit.")
 
 	if (options.debug):
 		DEBUG = options.debug
@@ -150,6 +150,9 @@ if (__name__ == "__main__"):
 	elif(options.url):
 		CONFIG_LOAD_MODE = 2
 		CONFIG_URL = options.url
+	elif (options.url_filename):
+		CONFIG_LOAD_MODE = 3
+		CONFIG_URL_FILENAME = options.url_filename
 	else:
 		logger.error("No config input,exiting...")
 		sys.exit(1)
@@ -214,6 +217,14 @@ if (__name__ == "__main__"):
 			cfg_filename = CONFIG_FILENAME
 		)
 	#	sc.consoleReadFileConfigs(CONFIG_FILENAME)
+	elif (CONFIG_LOAD_MODE == 3):
+		sc.console_setup(
+			TEST_MODE,
+			TEST_METHOD,
+			RESULT_IMAGE_COLOR,
+			SORT_METHOD,
+			url_filename = CONFIG_URL_FILENAME
+		)
 	else:
 		sc.console_setup(
 			TEST_MODE,

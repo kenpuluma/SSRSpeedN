@@ -46,6 +46,13 @@ def setOpts(parser):
 		help="Load ssr config from subscription url."
 		)
 	parser.add_option(
+		"--url-file",
+		action="store",
+		dest="url_filename",
+		default="",
+		help="Load ssr config from subscription file."
+		)
+	parser.add_option(
 		"-m","--method",
 		action="store",
 		dest="test_method",

@@ -1,0 +1,6 @@
+subscription/
+results/
+logs/
+venv/
+**/__pycache__/
+.git/
