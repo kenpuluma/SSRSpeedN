@@ -24,9 +24,9 @@ class V2Ray(BaseClient):
 			if (self._process == None):
 				if (self._checkPlatform() == "Windows"):
 					if (logger.level == logging.DEBUG):
-						self._process = subprocess.Popen(["./clients/v2ray-core/v2ray.exe","--config","{}/config.json".format(os.getcwd())])
+						self._process = subprocess.Popen(["./clients/v2ray-core/v2ray.exe","run","-c","{}/config.json".format(os.getcwd())])
 					else:
-						self._process = subprocess.Popen(["./clients/v2ray-core/v2ray.exe","--config","{}/config.json".format(os.getcwd())],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+						self._process = subprocess.Popen(["./clients/v2ray-core/v2ray.exe","run","-c","{}/config.json".format(os.getcwd())],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 					logger.info("Starting v2ray-core with server %s:%d" % (config["server"],config["server_port"]))
 				elif(self._checkPlatform() == "Linux" or self._checkPlatform() == "MacOS"):
 					if (logger.level == logging.DEBUG):

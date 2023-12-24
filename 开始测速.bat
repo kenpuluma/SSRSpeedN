@@ -7,9 +7,7 @@ if exist "%SystemRoot%\SysWOW64" path %path%;%windir%\SysNative;%SystemRoot%\Sys
 bcdedit >nul
 if '%errorlevel%' NEQ '0' (echo 当前无管理员权限) else (echo 当前已获取管理员权限)
 if exist "%~dp0\clients\v2ray-core\v2ray.exe" ( set v1=1 ) else ( set v1=0 )
-if exist "%~dp0\clients\v2ray-core\v2ctl.exe" ( set v2=1 ) else ( set v2=0 )
-set /a v3=v1+v2
-if %v3%==2 (echo 已安装V2ray-core ) else (echo 未安装V2ray-core )
+if %v1%==1 (echo 已安装V2ray-core ) else (echo 未安装V2ray-core )
 :start
 echo ====================================
 echo 1：开始测速（自定义设置）

@@ -29,14 +29,12 @@ class RequirementsCheck(object):
 				"./clients/shadowsocksr-win/shadowsocksr.exe"
 			],
 			"V2Ray-Core":[
-				"./clients/v2ray-core/v2ctl.exe",
 				"./clients/v2ray-core/v2ray.exe"
 			]
 		}
 
 		self.__linuxRequire = {
 			"V2Ray-Core":[
-				"./clients/v2ray-core/v2ctl",
 				"./clients/v2ray-core/v2ray"
 			]
 		}
