@@ -59,23 +59,22 @@ def google_ping(address, port=1080):
 			s.send(b"\x05\x01\x00\x03\x0agoogle.com\x00\x50")
 			s.recv(10)
 			s.send(b"GET / HTTP/1.1\r\nHost: google.com\r\nUser-Agent: curl/11.45.14\r\n\r\n")
-			data = s.recv(10)
+			data = s.recv(8)  # HTTP/1.1
 			if len(data) == 0:
-				raise ValueError()
-			s.close()
+				raise ValueError("Google Ping Failed")
 			deltaTime = time.time()-st
 			alt += deltaTime
 			suc += 1
 			_list.append(deltaTime)
 		except (socket.timeout):
-			logger.warning("Google Ping Timeout %d times." % (fac))
-		except ValueError:
-			logger.warning("Google Ping Failed")
-		except Exception:
-			logger.exception("Google Ping Exception:")
-		finally:
 			fac += 1
 			_list.append(0)
+			logger.warning("Google Ping Timeout %d times." % (fac))
+		except Exception:
+			fac += 1
+			_list.append(0)
+			logger.exception("Google Ping Exception:")
+		finally:
 			s.close()
 	if (suc == 0):
 		return (0,0,_list)

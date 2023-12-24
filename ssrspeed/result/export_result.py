@@ -260,7 +260,7 @@ class ExportResult(object):
 
 		
 	#	draw.line((0,newImageHeight - 30 - 1,imageRightPosition,newImageHeight - 30 - 1),fill=(127,127,127),width=1)
-		text = "便宜机场测速 With SSRSpeed N ( v{} )".format(config["VERSION"])
+		text = "SSRSpeed N ( v{} )".format(config["VERSION"])
 		draw.text((self.__getBasePos(imageRightPosition, text), 4),
 			text,
 			font=resultFont,
@@ -494,7 +494,7 @@ class ExportResult(object):
 		onlineNode = 0
 		for i in range(0,len(result)):
 			totalTraffic += result[i]["trafficUsed"] if (result[i]["trafficUsed"] > 0) else 0
-			if ((result[i]["ping"] > 0 and result[i]["gPing"] > 0) or (result[i]["dspeed"] > 0)):
+			if (result[i]["ping"] > 0 or result[i]["gPing"] > 0 or (result[i]["dspeed"] > 0)):
 				onlineNode += 1
 			
 			j = i + 1
@@ -711,7 +711,7 @@ class ExportResult(object):
 
 	#	draw.line((0,newImageHeight - 30 * 3 - 1,imageRightPosition,newImageHeight - 30 * 3 - 1),fill=(127,127,127),width=1)
 		draw.text((5,imageHeight + 30 * 2 + 4),
-			"测速频道：@Cheap_Proxy   Generated at {}".format(
+			"Generated at {}".format(
 				time.strftime("%Y-%m-%d %H:%M:%S", generatedTime)
 			),
 			font=resultFont,

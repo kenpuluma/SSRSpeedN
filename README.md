@@ -38,9 +38,9 @@ None                    未解锁
 - 支持 流媒体平台 Abema/Bahamut 动画疯/Disney+//HBO max/My tvsuper/YouTube premium 的解锁测试
 - 配置文件中提供了测速模块的控制端，可以自由选择是否测速/测ping/检测流媒体解锁
 - 取消了原版的大红配色，默认为彩虹配色，并增加了新配色 (poor)
-- 无耻地增加了频道tag，可以在 result/export_result.py 中改为自己的tag
 - 增加了节点复用检测功能
 - 增加了实际流量倍率测试功能
+- 移除了赞助频道tag，如果有频道赞助请务必联系我！
 
 ## 相关依赖
 
@@ -58,8 +58,9 @@ Linux 依赖
 ### 已测试平台
 
 1. Windows 10 x64
+2. Docker
 
-放过要饭人士，MacOS和Linux属实没钱测/懒得测，期待更多后浪反馈
+其他平台需要测试，欢迎反馈
 
 ### 理论支持平台
 
@@ -73,6 +74,8 @@ Linux 依赖
 
 - 原作者
   - [NyanChanMeow](https://github.com/NyanChanMeow)
+- 原修改版
+  - [PauperZ](https://github.com/PauperZ/SSRSpeedN)
 - beta版测试
   - [ChenBilly](https://t.me/ChenBilly)
   - [Duang](https://t.me/duang11212)
