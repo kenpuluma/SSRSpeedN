@@ -10,7 +10,7 @@ RUN pip install six asciidoc && pip install -r requirements.txt
 
 RUN { \
     echo "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"; \
-    echo "${CRON_FREQUENCY} cd /app && python /app/main.py --url-file ./subscription/subscription --mode pingonly >> /app/logs/cron.log 2>&1"; \
+    echo "${CRON_FREQUENCY} cd /app && python /app/main.py --url-file ./subscription/subscription --mode pingonly"; \
     } > /etc/cron.d/my-cron-job
 RUN chmod 0644 /etc/cron.d/my-cron-job
 RUN crontab /etc/cron.d/my-cron-job
@@ -18,7 +18,7 @@ RUN crontab /etc/cron.d/my-cron-job
 RUN git clone https://github.com/shadowsocks/simple-obfs.git
 RUN cd simple-obfs && git submodule update --init --recursive && ./autogen.sh && ./configure && make && make install
 RUN ln -s /usr/local/bin/obfs-local /usr/local/bin/simple-obfs
-RUN mkdir /app/subscription /app/results /app/logs && touch /app/logs/cron.log
+RUN mkdir /app/subscription /app/results /app/logs
 RUN chmod +x /app/clients/v2ray-core/v2ray
 
 CMD ["cron", "-f"]

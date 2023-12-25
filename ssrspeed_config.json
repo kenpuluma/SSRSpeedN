@@ -13,6 +13,7 @@
 		"username": null,
 		"password": null
 	},
+	"port": true,
 	"ntt": {
 		"enabled": true,
 		"internal_ip": "0.0.0.0",
@@ -20,12 +21,11 @@
 	},
 	"ping": false,
 	"gping": true,
-	"port": true,
 	"speed": false,
 	"method": "SOCKET",
 	"StSpeed": false,
-	"netflix": true,
 	"stream": true,
+	"netflix": true,
 	"hbo": false,
 	"disney": false,
 	"youtube": false,
