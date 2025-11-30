@@ -5,7 +5,7 @@ COPY . /app
 ENV CRON_FREQUENCY "*/30 * * * *"
 
 # Install cron and setup the cron job
-RUN apt-get -y update && apt-get -y install cron git libsodium-dev shadowsocks-libev build-essential autoconf libtool libssl-dev libpcre3-dev libev-dev asciidoc xmlto automake
+RUN apt-get -y update && apt-get -y install cron git libsodium-dev shadowsocks-libev build-essential autoconf libtool libssl-dev libpcre2-dev libev-dev asciidoc xmlto automake
 RUN pip install six asciidoc && pip install -r requirements.txt
 
 RUN { \
