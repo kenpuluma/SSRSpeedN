@@ -3,6 +3,7 @@
 import time
 import sys
 import os
+import io
 import logging, colorlog
 
 from config import config
@@ -11,6 +12,26 @@ from ssrspeed.shell import cli as cli_cfg
 from ssrspeed.utils import check_platform, RequirementsCheck
 from ssrspeed.core import SSRSpeedCore
 
+
+def _force_utf8(stream_name):
+	stream = getattr(sys, stream_name, None)
+	if not stream:
+		return
+	encoding = (getattr(stream, "encoding", None) or "").lower()
+	if encoding == "utf-8":
+		return
+	try:
+		stream.reconfigure(encoding="utf-8", errors="backslashreplace")
+		return
+	except Exception:
+		pass
+	buffer = getattr(stream, "buffer", None)
+	if buffer:
+		setattr(sys, stream_name, io.TextIOWrapper(buffer, encoding="utf-8", errors="backslashreplace"))
+
+
+_force_utf8("stdout")
+_force_utf8("stderr")
 if (not os.path.exists("./logs/")):
 	os.mkdir("./logs/")
 if (not os.path.exists("./results/")):
@@ -256,6 +277,5 @@ if (__name__ == "__main__"):
 			sys.exit(0)
 	
 	sc.start_test(options.use_ssr_cs)
-
 
 
