@@ -5,9 +5,12 @@ COPY . /app
 ENV CRON_FREQUENCY "*/30 * * * *"
 
 # Install cron and setup the cron job
-RUN apt-get -y update && apt-get -y install cron git libsodium-dev shadowsocks-libev build-essential autoconf libtool libssl-dev libpcre2-dev libev-dev asciidoc xmlto automake
+RUN apt-get -y update && apt-get -y install cron git libsodium-dev build-essential autoconf libtool libssl-dev libpcre2-dev libev-dev asciidoc xmlto automake
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN cargo install shadowsocks-rust
 RUN pip install six asciidoc && pip install -r requirements.txt
-
+RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo Asia/Shanghai >/etc/timezone
 RUN { \
     echo "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"; \
     echo "${CRON_FREQUENCY} cd /app && python /app/main.py --url-file ./subscription/subscription --mode pingonly"; \

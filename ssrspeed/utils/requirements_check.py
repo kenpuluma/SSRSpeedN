@@ -12,11 +12,10 @@ logger = logging.getLogger("Sub")
 class RequirementsCheck(object):
 	def __init__(self):
 		self.__winRequire = {
-			"Shadowsocks-libev":[
-				"./clients/shadowsocks-libev/obfs-local.exe",
-				"./clients/shadowsocks-libev/simple-obfs.exe",
-				"./clients/shadowsocks-libev/ss-local.exe",
-				"./clients/shadowsocks-libev/ss-tunnel.exe"
+			"Shadowsocks-Rust":[
+				"./clients/shadowsocks-rust/obfs-local.exe",
+				"./clients/shadowsocks-rust/simple-obfs.exe",
+				"./clients/shadowsocks-rust/sslocal.exe"
 			],
 			"ShadowsocksR-libev":[
 				"./clients/shadowsocksr-libev/libssp-0.dll",
@@ -117,8 +116,8 @@ class RequirementsCheck(object):
 				if (filename == "obfs-local"):
 					logger.info("Obfs-Local found {}".format(os.path.join(cmdpath,"obfs-local")))
 					simpleobfs = True
-				elif(filename == "ss-local"):
-					logger.info("Shadowsocks-libev found {}".format(os.path.join(cmdpath,"ss-local")))
+				elif(filename == "sslocal"):
+					logger.info("Shadowsocks-Rust found {}".format(os.path.join(cmdpath,"sslocal")))
 					sslibev = True
 				if (simpleobfs and sslibev):
 					break
@@ -127,7 +126,7 @@ class RequirementsCheck(object):
 		if (not simpleobfs):
 			logger.warn("Simple Obfs not found !!!")
 		if (not sslibev):
-			logger.warn("Shadowsocks-libev not found !!!")
+			logger.warn("Shadowsocks-Rust not found !!!")
 		return True if (simpleobfs and sslibev) else False
 
 

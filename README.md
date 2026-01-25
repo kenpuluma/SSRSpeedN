@@ -61,7 +61,7 @@ Python第三方库
 Linux 依赖
 
 - [libsodium](https://github.com/jedisct1/libsodium)
-- [Shadowsocks-libev](https://github.com/shadowsocks/shadowsocks-libev)
+- [Shadowsocks-Rust](https://github.com/shadowsocks/shadowsocks-rust)
 - [Simple-Obfs](https://github.com/shadowsocks/simple-obfs)
 
 ## 支持平台
@@ -134,7 +134,7 @@ python main.py -u "https://home.yoyu.dev/subscriptionlink" --include 香港 Azur
 ### docker运行节点状态监控
 首先构建docker镜像
 ```
-docker build -t SSRSpeedN .
+docker build -t ssrspeedn .
 ```
 之后使用下面的命令启动docker镜像
 ```
