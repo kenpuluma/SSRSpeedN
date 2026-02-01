@@ -13,8 +13,7 @@ class RequirementsCheck(object):
 	def __init__(self):
 		self.__winRequire = {
 			"Mihomo":[
-				"./clients/mihomo/mihomo.exe",
-				"mihomo.exe"
+				"./clients/mihomo/mihomo.exe"
 			]
 		}
 

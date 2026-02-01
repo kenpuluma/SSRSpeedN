@@ -7,13 +7,9 @@ import logging
 logger = logging.getLogger("Sub")
 
 
-from . import BaseParser
-
-
-class TrojanParser(BaseParser):
+class TrojanParser:
 	def __init__(self):
-		super(TrojanParser, self).__init__()
-
+		pass
 	# From: https://github.com/NyanChanMeow/SSRSpeed/issues/105
 	def _parseLink(self, link :str):
 		if not link.startswith("trojan://"):

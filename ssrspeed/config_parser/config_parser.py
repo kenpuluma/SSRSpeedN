@@ -8,7 +8,6 @@ import requests
 
 from ..utils import b64plus
 from ..types.nodes import NodeShadowsocks, NodeShadowsocksR, NodeV2Ray,NodeTrojan
-from .base_configs import shadowsocks_get_config, V2RayBaseConfigs
 from .shadowsocks_parsers import ParserShadowsocksBasic, ParserShadowsocksSIP002, ParserShadowsocksD
 from .shadowsocksr_parsers import ParserShadowsocksR
 from .v2ray_parsers import ParserV2RayN, ParserV2RayQuantumult
@@ -27,7 +26,6 @@ logger = logging.getLogger("Sub")
 class UniversalParser:
 	def __init__(self):
 		self.__nodes = []
-		self.__ss_base_cfg = shadowsocks_get_config(LOCAL_ADDRESS, LOCAL_PORT, TIMEOUT)
 
 	@staticmethod
 	def web_config_to_node(configs: list) -> list:
@@ -47,9 +45,6 @@ class UniversalParser:
 	@property
 	def nodes(self):
 		return deepcopy(self.__nodes)
-
-	def __get_ss_base_config(self):
-		return deepcopy(self.__ss_base_cfg)
 
 	def __clean_nodes(self):
 		self.__nodes.clear()
@@ -77,10 +72,10 @@ class UniversalParser:
 				#Shadowsocks
 				cfg = None
 				try:
-					pssip002 = ParserShadowsocksSIP002(self.__get_ss_base_config())
+					pssip002 = ParserShadowsocksSIP002()
 					cfg = pssip002.parse_single_link(link)
 				except ValueError:
-					pssb = ParserShadowsocksBasic(self.__get_ss_base_config())
+					pssb = ParserShadowsocksBasic()
 					cfg = pssb.parse_single_link(link)
 				if cfg:
 					node = NodeShadowsocks(cfg)
@@ -89,7 +84,7 @@ class UniversalParser:
 
 			elif link[:6] == "ssr://":
 				#ShadowsocksR
-				pssr = ParserShadowsocksR(self.__get_ss_base_config())
+				pssr = ParserShadowsocksR()
 				cfg = pssr.parse_single_link(link)
 				if cfg:
 					node = NodeShadowsocksR(cfg)
@@ -117,8 +112,7 @@ class UniversalParser:
 				if not cfg:
 					logger.error(f"Invalid vmess link: {link}")
 				else:
-					gen_cfg = V2RayBaseConfigs.generate_config(cfg, LOCAL_ADDRESS, LOCAL_PORT)
-					node = NodeV2Ray(gen_cfg)
+					node = NodeV2Ray(cfg)
 			elif link[:9] == "trojan://":
 				cfg = None
 				logger.info("Try Trojan Parser.")
@@ -140,18 +134,14 @@ class UniversalParser:
 
 	def __parse_clash(self, clash_cfg: str) -> list:
 		result = []
-		pc = ParserClash(shadowsocks_get_config(LOCAL_ADDRESS, LOCAL_PORT, TIMEOUT))
+		pc = ParserClash()
 		pc.parse_config(clash_cfg)
 		cfgs = pc.config_list
 		for cfg in cfgs:
 			if cfg["type"] == "ss":
 				result.append(NodeShadowsocks(cfg["config"]))
 			elif cfg["type"] == "vmess":
-				result.append(
-					NodeV2Ray(
-						V2RayBaseConfigs.generate_config(cfg["config"], LOCAL_ADDRESS, LOCAL_PORT)
-					)
-				)
+				result.append(NodeV2Ray(cfg["config"]))
 			elif cfg["type"]=="trojan":
 				result.append(NodeTrojan(cfg["config"]))
 
@@ -190,22 +180,6 @@ class UniversalParser:
 			}
 			logger.info("Reading {}".format(url))
 
-			ClashUA = {
-        		"User-Agent": "Clash"
-    		}
-
-			try:
-				r = requests.get(url, headers=ClashUA, timeout=15)
-				t = r.headers["subscription-userinfo"]
-				dl = int(t[t.find("download") + 9:t.find("total") - 2])
-				sum = dl
-			except:
-				sum = 0
-
-			with open(r'test.txt', 'a+', encoding='utf-8') as test:
-				test.write('{}\n'.format(url))
-				test.write('{}\n'.format(sum))
-
 			if PROXY_SETTINGS["enabled"]:
 				auth = ""
 				if PROXY_SETTINGS["username"]:
@@ -227,7 +201,6 @@ class UniversalParser:
 			else:
 				rep = requests.get(url,headers = header, timeout=15)
 			rep.encoding = "utf-8"
-		#	rep = rep.content.decode("utf-8")
 			rep = rep.text
 
 			parsed = False
@@ -235,7 +208,7 @@ class UniversalParser:
 			if rep[:6] == "ssd://":
 				parsed = True
 				logger.info("Try ShadowsocksD Parser.")
-				pssd = ParserShadowsocksD(shadowsocks_get_config(LOCAL_ADDRESS, LOCAL_PORT, TIMEOUT))
+				pssd = ParserShadowsocksD()
 				cfgs = pssd.parseSubsConfig(b64plus.decode(rep[6:]).decode("utf-8"))
 				for cfg in cfgs:
 					self.__nodes.append(NodeShadowsocks(cfg))
@@ -274,12 +247,12 @@ class UniversalParser:
 					and "vmess" not in data
 				)
 			):
-				pssb = ParserShadowsocksBasic(self.__get_ss_base_config())
+				pssb = ParserShadowsocksBasic()
 				for cfg in pssb.parse_gui_data(data):
 					self.__nodes.append(NodeShadowsocks(cfg))
 			#ShadowsocksR
 			elif "serverSubscribes" in data:
-				pssr = ParserShadowsocksR(self.__get_ss_base_config())
+				pssr = ParserShadowsocksR()
 				for cfg in pssr.parse_gui_data(data):
 					self.__nodes.append(NodeShadowsocksR(cfg))
 			#V2RayN
@@ -287,11 +260,7 @@ class UniversalParser:
 				pv2n = ParserV2RayN()
 				cfgs = pv2n.parse_gui_data(data)
 				for cfg in cfgs:
-					self.__nodes.append(
-						NodeV2Ray(
-							V2RayBaseConfigs.generate_config(cfg, LOCAL_ADDRESS, LOCAL_PORT)
-						)
-					)
+					self.__nodes.append(NodeV2Ray(cfg))
 		except json.JSONDecodeError:
 			#Try Load as Yaml
 			self.__nodes = self.__parse_clash(raw_data)

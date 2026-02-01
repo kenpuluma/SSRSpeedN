@@ -194,22 +194,6 @@ class MihomoClient:
             logger.error(f"Error testing delay for {proxy_name}: {e}")
             return 0
     
-    def get_proxies(self):
-        """
-        Get all proxies information.
-        
-        Returns:
-            dict: Proxies data from API
-        """
-        try:
-            response = requests.get(f"{self.api_url}/proxies", timeout=5)
-            if response.status_code == 200:
-                return response.json()
-            return {}
-        except Exception as e:
-            logger.error(f"Error getting proxies: {e}")
-            return {}
-    
     def __del__(self):
         """Cleanup on deletion."""
         self.stop()

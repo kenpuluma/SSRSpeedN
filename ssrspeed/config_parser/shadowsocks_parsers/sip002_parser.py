@@ -10,15 +10,25 @@ from ...utils import b64plus
 logger = logging.getLogger("Sub")
 
 class ParserShadowsocksSIP002:
-	def __init__(self, base_config: dict):
+	def __init__(self):
 		self.__config_list = []
-		self.__base_config = base_config
 
-	def __get_shadowsocks_base_config(self):
-		return copy.deepcopy(self.__base_config)
+	@staticmethod
+	def __get_base_config():
+		return {
+			"server": "",
+			"server_port": -1,
+			"method": "",
+			"password": "",
+			"plugin": "",
+			"plugin_opts": "",
+			"plugin_args": "",
+			"remarks": "",
+			"group": "N/A"
+		}
 
 	def __parse_link(self, link: str):
-		_config = self.__get_shadowsocks_base_config()
+		_config = self.__get_base_config()
 		if link[:5] != "ss://":
 			logger.error("Unsupport link : %s" % link)
 			return None

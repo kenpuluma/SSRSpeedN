@@ -8,11 +8,20 @@ logger = logging.getLogger("Sub")
 from ...utils import b64plus
 
 class ParserShadowsocksR:
-	def __init__(self, base_config: dict):
-		self.__base_config = base_config
-
-	def __get_base_config(self):
-		return copy.deepcopy(self.__base_config)
+	@staticmethod
+	def __get_base_config():
+		return {
+			"server": "",
+			"server_port": -1,
+			"method": "",
+			"protocol": "",
+			"obfs": "",
+			"password": "",
+			"protocol_param": "",
+			"obfs_param": "",
+			"remarks": "",
+			"group": "N/A"
+		}
 
 	def parse_single_link(self, link: str):
 		_config = self.__get_base_config()
@@ -26,11 +35,6 @@ class ParserShadowsocksR:
 		decoded1 = decoded.split("/?")[0].split(":")[::-1]
 		if (len(decoded1) != 6):
 			return None
-		#	addr = ""
-		#	for i in range(5,len(decoded1) - 1):
-		#		addr += decoded1[i] + ":"
-		#	addr += decoded1[len(decoded1) - 1]
-		#	decoded1[5] = addr
 		decoded2 = decoded.split("/?")[1].split("&")
 		_config["server"] = decoded1[5]
 		_config["server_port"] = int(decoded1[4])

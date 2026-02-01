@@ -23,12 +23,8 @@ def setArgsListCallback(option,opt_str,value,parser):
 		if (arg.replace(" ","") == ""):
 			continue
 		value.append(arg)
-#	print(parser.values)
-#	print(option.dest)
-#	print(opt_str)
 	del parser.rargs[:len(value)]
 	setattr(parser.values,option.dest,value)
-#	print(value)
 
 def setOpts(parser):
 	parser.add_option(
@@ -51,20 +47,6 @@ def setOpts(parser):
 		dest="url_filename",
 		default="",
 		help="Load ssr config from subscription file."
-		)
-	parser.add_option(
-		"-m","--method",
-		action="store",
-		dest="test_method",
-		default="socket",
-		help="Select test method in [speedtestnet, fast, socket, stasync]."
-		)
-	parser.add_option(
-		"-M","--mode",
-		action="store",
-		dest="test_mode",
-		default="all",
-		help="Select test mode in [all,wps,pingonly]."
 		)
 	parser.add_option(
 		"--include",
@@ -115,28 +97,12 @@ def setOpts(parser):
 		help="Exclude nodes by remarks using keyword."
 	)
 	parser.add_option(
-		"--use-ssr-cs",
-		action="store_true",
-		dest="use_ssr_cs",
-		default = False,
-		help="Replace the ShadowsocksR-libev with the ShadowsocksR-C# (Only Windows)."
-	)
-	parser.add_option(
 		"-g",
 		action="store",
 		dest="group_override",
 		default="",
 		help="Manually set group."
 	)
-	'''
-	parser.add_option(
-		"-t","--type",
-		action="store",
-		dest="proxy_type",
-		default = "ssr",
-		help="Select proxy type in [ssr,ssr-cs,ss,v2ray],default ssr."
-		)
-	'''
 	parser.add_option(
 		"-y","--yes",
 		action="store_true",
@@ -149,22 +115,14 @@ def setOpts(parser):
 		action="store",
 		dest="result_color",
 		default="",
-		help="Set the colors when exporting images.."
+		help="Set the colors when exporting images."
 		)
-	'''
-	parser.add_option(
-		"-s","--split",
-		action="store",
-		dest="split_count",
-		default="-1",
-		help="Set the number of nodes displayed in a single image when exporting images."
-	'''
 	parser.add_option(
 		"-s","--sort",
 		action="store",
 		dest="sort_method",
 		default="",
-		help="Select sort method in [speed,rspeed,ping,rping],default not sorted."
+		help="Select sort method in [ping,rping], default not sorted."
 		)
 	parser.add_option(
 		"-i","--import",
@@ -187,13 +145,6 @@ def setOpts(parser):
 		default=False,
 		help="Run program in debug mode."
 		)
-	parser.add_option(
-		"--paolu",
-		action="store_true",
-		dest="paolu",
-		default=False,
-		help="如题"
-		)
 
 def init(VERSION):
 	parser = OptionParser(usage="Usage: %prog [options] arg1 arg2...",version="SSR Speed Tool " + VERSION)
@@ -203,4 +154,3 @@ def init(VERSION):
 		sys.exit(0)
 	(options,args) = parser.parse_args()
 	return (options,args)
-

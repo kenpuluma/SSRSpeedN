@@ -69,17 +69,6 @@ class ParserV2RayClash(object):
 		for cfg in clashCfg["Proxy"]:
 			if (cfg.get("type","N/A").lower() == "vmess"):
 				self.__clashVmessConfigs.append(cfg)
-			else:
-				pass
-			#	logger.info("Config {}, type {} not support.".format(
-			#		cfg["name"],
-			#		cfg["type"]
-			#		)
-			#	)
-	#	logger.debug("Read {} configs.".format(
-	#		len(self.__clashVmessConfigs)
-	#		)
-	#	)
 		for cfg in self.__clashVmessConfigs:
 			self.__decodedConfigs.append(self.__clashConfigConvert(cfg))
 		

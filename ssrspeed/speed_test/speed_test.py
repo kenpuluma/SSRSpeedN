@@ -3,24 +3,17 @@ import logging
 import copy
 import socket
 import socks
-import time
-import json
 import pynat
 import requests
+import json
 import concurrent.futures
-from bs4 import BeautifulSoup
-from .test_methods import SpeedTestMethods
 from ..clash_api import MihomoClient, node_to_clash_proxy, generate_clash_config
-from ..utils.geo_ip import domain2ip, parseLocation, IPLoc
 from config import config
 
 logger = logging.getLogger("Sub")
 LOCAL_ADDRESS = config["localAddress"]
 LOCAL_PORT = config["localPort"]
-PING_TEST = config["ping"]
-GOOGLE_PING_TEST = config["gping"]
 NAT_TEST = config["ntt"]
-GEO_TEST = config["geoip"]
 STREAM_TEST = config["stream"]
 NETFLIX_TEST = config["netflix"]
 HBO_TEST = config["hbo"]
@@ -41,10 +34,8 @@ HEADERS = {
 
 
 class SpeedTest(object):
-    def __init__(self, parser, method="SOCKET", use_ssr_cs=False):
+    def __init__(self, parser):
         self.__configs = parser.nodes
-        self.__use_ssr_cs = use_ssr_cs
-        self.__testMethod = method
         self.__results = []
         self.__current = {}
         self.__baseResult = {
@@ -52,27 +43,6 @@ class SpeedTest(object):
             "remarks": "N/A",
             "loss": 1,
             "ping": 0,
-            "gPingLoss": 1,
-            "gPing": 0,
-            "dspeed": -1,
-            "maxDSpeed": -1,
-            "trafficUsed": 0,
-            "geoIP": {
-                "inbound": {
-                    "address": "N/A",
-                    "info": "N/A"
-                },
-                "outbound": {
-                    "address": "N/A",
-                    "info": "N/A"
-                }
-            },
-            "rawSocketSpeed": [],
-            "rawTcpPingStatus": [],
-            "rawGooglePingStatus": [],
-            "webPageSimulation": {
-                "results": []
-            },
             "ntt": {
                 "type": "",
                 "internal_ip": "",
@@ -89,10 +59,6 @@ class SpeedTest(object):
             "Btype": False,
             "Ctype": False,
             "Bltype": "N/A",
-            "InRes": "N/A",
-            "OutRes": "N/A",
-            "InIP": "N/A",
-            "OutIP": "N/A",
             "port": 0,
         }
         # init all variables
@@ -105,10 +71,6 @@ class SpeedTest(object):
         self.btype = self.__baseResult["Btype"]
         self.ctype = self.__baseResult["Ctype"]
         self.bltype = self.__baseResult["Bltype"]
-        self.inboundGeoRES = self.__baseResult["InRes"]
-        self.outboundGeoRES = self.__baseResult["OutRes"]
-        self.inboundGeoIP = self.__baseResult["InIP"]
-        self.outboundGeoIP = self.__baseResult["OutIP"]
         # init thread pool
         self.executor = concurrent.futures.ThreadPoolExecutor()
         # init Mihomo client
@@ -141,60 +103,32 @@ class SpeedTest(object):
         return self.__current
 
     def getResponse(self, url):
-        response = 0
+        response = None
         try:
             if isinstance(url, str):
                 response = requests.get(url, proxies=PROXIES, headers=HEADERS, timeout=8)
             else:
                 response = requests.get(url[0], proxies=PROXIES, headers=HEADERS, timeout=8, cookies=url[1])
         except Exception as e:
-            logger.error('代理服务器连接异常：' + str(e.args))
+            logger.error('Proxy connection error: ' + str(e.args))
         return response
 
-    def __geoIPInbound(self, _cfg):
-        inbound_ip = domain2ip(_cfg["server"])
-        inbound_info = IPLoc(inbound_ip)
-        inbound_geo = "{} {}, {}".format(
-            inbound_info.get("country", "N/A"),
-            inbound_info.get("city", "Unknown City"),
-            inbound_info.get("organization", "N/A")
-        )
-        self.inboundGeoIP = inbound_ip
-        self.inboundGeoRES = "{}, {}".format(
-            inbound_info.get("city", "Unknown City"),
-            inbound_info.get("organization", "N/A")
-        )
-        logger.info(
-            "Node inbound IP : {}, Geo : {}".format(
-                inbound_ip,
-                inbound_geo
-            )
-        )
-        return inbound_ip, inbound_geo, inbound_info.get("country_code", "N/A")
+    def __resetStreamVars(self):
+        """Reset streaming detection variables for each node"""
+        self.ntype = "None"
+        self.htype = False
+        self.dtype = False
+        self.ytype = False
+        self.ttype = False
+        self.atype = False
+        self.btype = False
+        self.ctype = False
+        self.bltype = "N/A"
 
-    def __geoIPOutbound(self):
-        outbound_info = IPLoc()
-        outbound_ip = outbound_info.get("ip", "N/A")
-        outbound_geo = "{} {}, {}".format(
-            outbound_info.get("country", "N/A"),
-            outbound_info.get("city", "Unknown City"),
-            outbound_info.get("organization", "N/A")
-        )
-        self.outboundGeoIP = outbound_ip
-        self.outboundGeoRES = "{}, {}".format(
-            outbound_info.get("country_code", "N/A"),
-            outbound_info.get("organization", "N/A")
-        )
-        logger.info(
-            "Node outbound IP : {}, Geo : {}".format(
-                outbound_ip,
-                outbound_geo
-            )
-        )
-        return outbound_ip, outbound_geo, outbound_info.get("country_code", "N/A")
-
-    def __getStream(self, outbound_ip=None):
+    def __getStream(self):
         urls = []
+        bahamut_code = 0
+        
         if NETFLIX_TEST:
             urls.append("https://www.netflix.com/title/70242311")
             urls.append("https://www.netflix.com/title/70143836")
@@ -230,8 +164,7 @@ class SpeedTest(object):
                 "https://api.bilibili.com/pgc/player/web/playurl?avid=50762638&cid=100279344&qn=0&type=&otype=json&ep_id=268176&fourk=1&fnver=0&fnval=16")
 
         # perform all requests
-        results = self.executor.map(self.getResponse, urls)
-        results = list(results)
+        results = list(self.executor.map(self.getResponse, urls))
 
         if NETFLIX_TEST:
             logger.info("Performing netflix test LOCAL_PORT: {:d}.".format(LOCAL_PORT))
@@ -239,17 +172,9 @@ class SpeedTest(object):
                 _sum = 0
                 r1 = results.pop(0)
                 r2 = results.pop(0)
-                netflix_ip = "netflix_ip"
-                if r1 != 0 and r2 != 0:
+                if r1 is not None and r2 is not None:
                     if r1.status_code == 200:
                         _sum += 1
-                        soup = BeautifulSoup(r1.text, "html.parser")
-                        netflix_ip_str = str(soup.find_all("script"))
-                        p1 = netflix_ip_str.find("requestIpAddress")
-                        netflix_ip_r = netflix_ip_str[p1 + 19:p1 + 60]
-                        p2 = netflix_ip_r.find(",")
-                        netflix_ip = netflix_ip_r[0:p2]
-                        logger.info("Netflix IP : " + netflix_ip)
                     rg = ""
                     if r2.status_code == 200:
                         _sum += 1
@@ -259,75 +184,71 @@ class SpeedTest(object):
                             rg = "(" + rg + ")"
                         else:
                             rg = ""
-                    # 测试连接状态
                     if _sum == 0:
                         logger.info("Netflix test result: None.")
                         self.ntype = "None"
                     elif _sum == 1:
                         logger.info("Netflix test result: Only Original.")
                         self.ntype = "Only Original"
-                    elif outbound_ip and outbound_ip[0] == netflix_ip:
-                        logger.info("Netflix test result: Full Native.")
-                        self.ntype = "Full Native" + rg
                     else:
-                        logger.info("Netflix test result: Full DNS.")
-                        self.ntype = "Full DNS" + rg
+                        logger.info("Netflix test result: Full.")
+                        self.ntype = "Full" + rg
                 else:
                     self.ntype = "Unknown"
             except Exception as e:
-                logger.error('代理服务器连接异常：' + str(e.args))
+                logger.error('Proxy connection error: ' + str(e.args))
         if HBO_TEST:
             logger.info("Performing HBO max test LOCAL_PORT: {:d}.".format(LOCAL_PORT))
             try:
                 r = results.pop(0)
-                if r != 0 and r.status_code == 200:
+                if r is not None and r.status_code == 200:
                     self.htype = True
             except Exception as e:
-                logger.error('代理服务器连接异常：' + str(e.args))
+                logger.error('Proxy connection error: ' + str(e.args))
         if DISNEY_TEST:
             logger.info("Performing Disney plus test LOCAL_PORT: {:d}.".format(LOCAL_PORT))
             try:
                 r1 = results.pop(0)
                 r2 = results.pop(0)
-                if r1 != 0 and r2 != 0:
+                if r1 is not None and r2 is not None:
                     if r1.status_code == 200 and r2.status_code != 403:
                         self.dtype = True
             except Exception as e:
-                logger.error('代理服务器连接异常：' + str(e.args))
+                logger.error('Proxy connection error: ' + str(e.args))
         if YOUTUBE_TEST:
             logger.info("Performing Youtube Premium test LOCAL_PORT: {:d}.".format(LOCAL_PORT))
             try:
                 r = results.pop(0)
-                if r != 0 and r.status_code == 200:
+                if r is not None and r.status_code == 200:
                     self.ytype = True
             except Exception as e:
-                logger.error('代理服务器连接异常：' + str(e.args))
+                logger.error('Proxy connection error: ' + str(e.args))
         if TVB_TEST:
             logger.info("Performing TVB test LOCAL_PORT: {:d}.".format(LOCAL_PORT))
             try:
                 r = results.pop(0)
-                if r != 0:
+                if r is not None:
                     tvb_region = json.loads(r.text)['region']
                     if tvb_region == 1:
                         self.ttype = True
             except Exception as e:
-                logger.error('代理服务器连接异常：' + str(e.args))
+                logger.error('Proxy connection error: ' + str(e.args))
         if ABEMA_TEST:
             logger.info("Performing Abema test LOCAL_PORT: {:d}.".format(LOCAL_PORT))
             try:
                 r = results.pop(0)
-                if r != 0 and r.text.count("Country") > 0:
+                if r is not None and r.text.count("Country") > 0:
                     self.atype = True
             except Exception as e:
-                logger.error('代理服务器连接异常：' + str(e.args))
+                logger.error('Proxy connection error: ' + str(e.args))
         if BAHAMUT_TEST and bahamut_code:
             logger.info("Performing Bahamut test LOCAL_PORT: {:d}.".format(LOCAL_PORT))
             try:
                 r = results.pop(0)
-                if r != 0 and r.text.count("animeSn") > 0:
+                if r is not None and r.text.count("animeSn") > 0:
                     self.btype = True
             except Exception as e:
-                logger.error('代理服务器连接异常：' + str(e.args))
+                logger.error('Proxy connection error: ' + str(e.args))
         if CHATGPT_TEST:
             logger.info("Performing ChatGPT test LOCAL_PORT: {:d}.".format(LOCAL_PORT))
             chatgpt_region_list = ['T1', 'XX', 'AL', 'DZ', 'AD', 'AO', 'AG', 'AR', 'AM', 'AU', 'AT', 'AZ', 'BS', 'BD',
@@ -348,21 +269,21 @@ class SpeedTest(object):
             try:
                 r1 = results.pop(0)
                 r2 = results.pop(0)
-                if r1 != 0 and r2 != 0:
+                if r1 is not None and r2 is not None:
                     r2text = r2.text
                     r2index = r2text.find('loc=')
                     country_code = r2text[r2index + 4: r2index + 6]
                     if r1.text.count('Error reference number: 1020') == 0 and country_code in chatgpt_region_list:
                         self.ctype = True
             except Exception as e:
-                logger.error('代理服务器连接异常：' + str(e.args))
+                logger.error('Proxy connection error: ' + str(e.args))
         if BILIBILI_TEST:
             logger.info("Performing Bilibili test LOCAL_PORT: {:d}.".format(LOCAL_PORT))
             try:
                 r1 = results.pop(0)
                 r2 = results.pop(0)
                 _sum = 0
-                if r1 != 0 and r2 != 0:
+                if r1 is not None and r2 is not None:
                     if r1.text.count('抱歉您所在地区不可观看') == 0:
                         self.bltype = "仅限港澳台"
                         _sum += 1
@@ -372,34 +293,7 @@ class SpeedTest(object):
                     if _sum == 2:
                         self.bltype = "全解锁"
             except Exception as e:
-                logger.error('代理服务器连接异常：' + str(e.args))
-
-    def __tcpPing(self, server, port):
-        res = {
-            "loss": self.__baseResult["loss"],
-            "ping": self.__baseResult["ping"],
-            "rawTcpPingStatus": self.__baseResult["rawTcpPingStatus"],
-            "gPing": self.__baseResult["gPing"],
-            "gPingLoss": self.__baseResult["gPingLoss"],
-            "rawGooglePingStatus": self.__baseResult["rawGooglePingStatus"]
-        }
-        if PING_TEST:
-            st = SpeedTestMethods()
-            ping_test = st.tcpPing(server, port)
-            res["loss"] = 1 - ping_test[1]
-            res["ping"] = ping_test[0]
-            res["rawTcpPingStatus"] = ping_test[2]
-            time.sleep(1)
-        if GOOGLE_PING_TEST:
-            try:
-                st = SpeedTestMethods()
-                google_ping_test = st.googlePing()
-                res["gPing"] = google_ping_test[0]
-                res["gPingLoss"] = 1 - google_ping_test[1]
-                res["rawGooglePingStatus"] = google_ping_test[2]
-            except:
-                pass
-        return res
+                logger.error('Proxy connection error: ' + str(e.args))
 
     def __natTypeTest(self):
         s = socks.socksocket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -420,7 +314,7 @@ class SpeedTest(object):
         finally:
             s.close()
 
-    def __fillItem(self, item, nat=None, speed=None, web=None, inbound_info=None, outbound_info=None):
+    def __fillItem(self, item, nat=None):
         # stream
         item["Ntype"] = self.ntype
         item["Htype"] = self.htype
@@ -438,31 +332,8 @@ class SpeedTest(object):
             item["ntt"]["public_port"] = nat[2]
             item["ntt"]["internal_ip"] = nat[3]
             item["ntt"]["internal_port"] = nat[4]
-        # speed
-        if speed:
-            try:
-                item["dspeed"] = speed[0]
-                item["maxDSpeed"] = speed[1]
-                item["rawSocketSpeed"] = speed[2]
-                item["trafficUsed"] = speed[3]
-            except:
-                pass
-        # web speed
-        if web:
-            item["webPageSimulation"]["results"] = web
-        # geo
-        item["InRes"] = self.inboundGeoRES
-        item["OutRes"] = self.outboundGeoRES
-        item["InIP"] = self.inboundGeoIP
-        item["OutIP"] = self.outboundGeoIP
-        if inbound_info:
-            item["geoIP"]["inbound"]["address"] = inbound_info[0]
-            item["geoIP"]["inbound"]["info"] = inbound_info[1]
-        if outbound_info:
-            item["geoIP"]["outbound"]["address"] = outbound_info[0]
-            item["geoIP"]["outbound"]["info"] = outbound_info[1]
 
-    def __start_test(self, test_mode="FULL"):
+    def __start_test(self):
         self.__results = []
         total_nodes = len(self.__configs)
         done_nodes = 0
@@ -474,6 +345,8 @@ class SpeedTest(object):
         while node:
             done_nodes += 1
             item = self.__getBaseResult()
+            self.__resetStreamVars()
+            
             try:
                 cfg = node.config
                 cfg["server_port"] = int(cfg["server_port"])
@@ -495,107 +368,65 @@ class SpeedTest(object):
                     clash_config = generate_clash_config(clash_proxy, socks_port=LOCAL_PORT)
                 except Exception as e:
                     logger.error(f"Failed to convert node to Clash config: {e}")
+                    self.__results.append(item)
+                    node = self.__getNextConfig()
                     continue
                 
                 # Start or update Mihomo with new config
                 if not self.__mihomo.process:
                     if not self.__mihomo.start(clash_config):
                         logger.error("Failed to start Mihomo")
+                        self.__results.append(item)
+                        node = self.__getNextConfig()
                         continue
                 else:
                     if not self.__mihomo.update_config(clash_config):
                         logger.error("Failed to update Mihomo config")
+                        self.__results.append(item)
+                        node = self.__getNextConfig()
                         continue
                 
-                # Test proxy delay via Mihomo API
+                # Test proxy delay via Mihomo API (primary ping method)
                 delay = self.__mihomo.test_delay(clash_proxy["name"], timeout=10000)
-                if delay <= 0:
-                    logger.warning(f"Proxy {clash_proxy['name']} unreachable (delay: {delay})")
-                    # Still continue with other tests even if delay test fails
+                if delay > 0:
+                    item["ping"] = delay  # milliseconds
+                    item["loss"] = 0
+                    logger.info(f"Proxy {clash_proxy['name']} delay: {delay}ms")
+                else:
+                    logger.warning(f"Proxy {clash_proxy['name']} unreachable")
+                    item["ping"] = 0
+                    item["loss"] = 1
                 
                 self.__current = item
 
-                # geo
-                inbound_info = None
-                outbound_info = None
-                if GEO_TEST:
-                    inbound_info = self.__geoIPInbound(cfg)
-                    outbound_info = self.__geoIPOutbound()
-                # ping
-                ping_result = self.__tcpPing(cfg["server"], cfg["server_port"])
-                if isinstance(ping_result, dict):
-                    for k in ping_result.keys():
-                        item[k] = ping_result[k]
-                # stream
-                if STREAM_TEST:
-                    self.__getStream(outbound_info)
-                # nat
+                # stream detection
+                if STREAM_TEST and item["loss"] == 0:
+                    self.__getStream()
+                
+                # nat type test
                 nat_info = ""
                 nat = None
-                if NAT_TEST["enabled"]:
+                if NAT_TEST["enabled"] and item["loss"] == 0:
                     nat = self.__natTypeTest()
                     if nat[0]:
                         nat_info += " - NAT Type: " + nat[0]
                     if nat[0] and nat[0] != pynat.BLOCKED:
                         nat_info += " - Internal End: {}:{}".format(nat[3], nat[4])
                         nat_info += " - Public End: {}:{}".format(nat[1], nat[2])
-                # speed
-                st = SpeedTestMethods()
-                web = None
-                speed = None
-                if test_mode == "WPS":
-                    web = st.startWpsTest()
-                if test_mode == "FULL":
-                    speed = st.startTest(self.__testMethod)
-                    if int(speed[0]) == 0:
-                        logger.warning("Re-testing node.")
-                        speed = st.startTest(self.__testMethod)
 
-                # fill
-                self.__fillItem(item, nat, speed, web, inbound_info, outbound_info)
-                if (not GOOGLE_PING_TEST) or item["gPing"] > 0 or (outbound_info and outbound_info[2] == "CN"):
-                    if test_mode == "WPS":
-                        logger.info(
-                            "[{}] - [{}] - Loss: [{:.2f}%] - TCP Ping: [{:.2f}] - Google Loss: [{:.2f}%] - Google Ping: [{:.2f}] - [WebPageSimulation]".format
-                                (
-                                item["group"],
-                                item["remarks"],
-                                item["loss"] * 100,
-                                int(item["ping"] * 1000),
-                                item["gPingLoss"] * 100,
-                                int(item["gPing"] * 1000)
-                            )
-                        )
-                    elif test_mode == "PING":
-                        logger.info(
-                            "[{}] - [{}] - Loss: [{:.2f}%] - TCP Ping: [{:.2f}] - Google Loss: [{:.2f}%] - Google Ping: [{:.2f}]{}".format
-                                (
-                                item["group"],
-                                item["remarks"],
-                                item["loss"] * 100,
-                                int(item["ping"] * 1000),
-                                item["gPingLoss"] * 100,
-                                int(item["gPing"] * 1000),
-                                nat_info
-                            )
-                        )
-                    elif test_mode == "FULL":
-                        logger.info(
-                            "[{}] - [{}] - Loss: [{:.2f}%] - TCP Ping: [{:.2f}] - Google Loss: [{:.2f}%] - Google Ping: [{:.2f}] - AvgStSpeed: [{:.2f}MB/s] - AvgMtSpeed: [{:.2f}MB/s]{}".format
-                                (
-                                item["group"],
-                                item["remarks"],
-                                item["loss"] * 100,
-                                int(item["ping"] * 1000),
-                                item["gPingLoss"] * 100,
-                                int(item["gPing"] * 1000),
-                                item["dspeed"] / 1024 / 1024,
-                                item["maxDSpeed"] / 1024 / 1024,
-                                nat_info
-                            )
-                        )
-                    else:
-                        logger.error(f"Unknown Test Mode {test_mode}")
+                # fill result
+                self.__fillItem(item, nat)
+                
+                logger.info(
+                    "[{}] - [{}] - Ping: [{}ms] - Loss: [{:.0f}%]{}".format(
+                        item["group"],
+                        item["remarks"],
+                        item["ping"],
+                        item["loss"] * 100,
+                        nat_info
+                    )
+                )
+                
             except Exception:
                 logger.exception("\n")
             finally:
@@ -609,14 +440,7 @@ class SpeedTest(object):
         
         self.__current = {}
 
-    def webPageSimulation(self):
-        logger.info("Test mode : Web Page Simulation")
-        self.__start_test("WPS")
-
-    def tcpingOnly(self):
-        logger.info("Test mode : tcp ping only.")
-        self.__start_test("PING")
-
-    def fullTest(self):
-        logger.info("Test mode : speed and tcp ping.Test method : {}.".format(self.__testMethod))
-        self.__start_test("FULL")
+    def startTest(self):
+        """Start the connectivity test"""
+        logger.info("Test mode: Connectivity test (Mihomo delay + streaming + NAT)")
+        self.__start_test()

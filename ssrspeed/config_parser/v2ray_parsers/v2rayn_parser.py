@@ -18,7 +18,6 @@ class ParserV2RayN(object):
 		except json.JSONDecodeError:
 			return None
 		try:
-			#logger.debug(_conf)
 			cfgVersion = str(_conf.get("v","1"))
 			server = _conf["add"]
 			port = int(_conf["port"])

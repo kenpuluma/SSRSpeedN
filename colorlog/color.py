@@ -116,18 +116,6 @@ def _parse_color_param(color_param, color_start):
     return str(c)
 
 
-# onvenience functions
-
-def warning(wrnmsg :str):
-    wrnmsg = 'Warning:' + wrnmsg
-    print(deco(wrnmsg, FG_YELLOW, bold=True), reset())
-
-def error(errmsg :str):
-    wrnmsg = 'Error:' + errmsg
-    print(deco(wrnmsg, FG_RED, bold=True), reset())
-    sys.exit()
-
-
 # demo usage
 if __name__ == '__main__':
     print(deco('Hello, ', 0x011, bold=True) + reset() + 'world!')
@@ -135,6 +123,4 @@ if __name__ == '__main__':
     print(deco('Hello, ', FG_BLUE, bold=True) + reset() + 'world!')
     print(deco('Hello, ', FG_YELLOW, BG_GREEN, bold=True) + reset() + 'world!')
     print(deco('Hello, ', FG_MAGENTA, bold=True) + reset() + 'w...')
-    warning("emmm, seems there is a small proble...")
-    error('Unknown error!')
 

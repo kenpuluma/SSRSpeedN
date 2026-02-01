@@ -8,16 +8,26 @@ import json
 logger = logging.getLogger("Sub")
 
 class ParserClash:
-	def __init__(self,ss_base_config):
+	def __init__(self):
 		self.__config_list = []
-		self.__ss_base_config = ss_base_config
 
 	@property
 	def config_list(self):
 		return deepcopy(self.__config_list)
 
-	def __get_shadowsocks_base_config(self):
-		return deepcopy(self.__ss_base_config)
+	@staticmethod
+	def __get_shadowsocks_base_config():
+		return {
+			"server": "",
+			"server_port": -1,
+			"method": "",
+			"password": "",
+			"plugin": "",
+			"plugin_opts": "",
+			"plugin_args": "",
+			"remarks": "",
+			"group": "N/A"
+		}
 	
 	def __parse_shadowsocks(self, cfg):
 		try:

@@ -8,9 +8,6 @@ logger = logging.getLogger("Sub")
 from ...utils import b64plus
 
 class ParserV2RayQuantumult(object):
-	def __init__(self):
-		pass
-
 	def parseSubsConfig(self,rawLink):
 		link = rawLink[8:]
 		linkDecoded = b64plus.decode(link).decode("utf-8")

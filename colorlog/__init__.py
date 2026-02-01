@@ -28,10 +28,7 @@ class ConsoleHandler(StreamHandler):
         self.addLogLevel(NOTIFY, 'NOTIFY', deco('', FG_YELLOW))
 
     def addLogLevel(self, level, levelName, deco_str=deco('', FG_WHITE)):
-        try:
-            level_to_decos[level] = deco_str
-        finally:
-            pass
+        level_to_decos[level] = deco_str
         addLevelName(level, levelName)
 
     def emit(self, record):
@@ -42,9 +39,3 @@ class ConsoleHandler(StreamHandler):
         record.levelname = deco(record.levelname, bold=True) + reset()
         record.filename = deco(record.filename, FG_MAGENTA) + reset()
         return super().emit(record)
-
-    # def format(self, record):
-    #     ''' NOT COMPATIBLE with `emit()`, don not use them together. '''
-    #     msg = super().format(record)
-    #     const_deco = level_to_decos.get(record.levelno, NOTSET)
-    #     return deco(msg, const_deco=const_deco) + reset()

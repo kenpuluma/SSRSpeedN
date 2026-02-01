@@ -8,12 +8,22 @@ import json
 logger = logging.getLogger("Sub")
 
 class ParserShadowsocksClash(object):
-	def __init__(self,baseConfig):
+	def __init__(self):
 		self.__configList = []
-		self.__baseConfig = baseConfig
 
-	def __getShadowsocksBaseConfig(self):
-		return copy.deepcopy(self.__baseConfig)
+	@staticmethod
+	def __getShadowsocksBaseConfig():
+		return {
+			"server": "",
+			"server_port": -1,
+			"method": "",
+			"password": "",
+			"plugin": "",
+			"plugin_opts": "",
+			"plugin_args": "",
+			"remarks": "",
+			"group": "N/A"
+		}
 
 	def __parseConfig(self,clashCfg: dict):
 		proxies = clashCfg["proxies"] if clashCfg.get("proxies", None) is not None else clashCfg["Proxy"]

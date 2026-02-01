@@ -11,12 +11,22 @@ from ...utils import b64plus
 logger = logging.getLogger("Sub")
 
 class ParserShadowsocksBasic(object):
-	def __init__(self,baseConfig):
+	def __init__(self):
 		self.__configList = []
-		self.__baseConfig = baseConfig
 
-	def __getShadowsocksBaseConfig(self):
-		return copy.deepcopy(self.__baseConfig)
+	@staticmethod
+	def __getShadowsocksBaseConfig():
+		return {
+			"server": "",
+			"server_port": -1,
+			"method": "",
+			"password": "",
+			"plugin": "",
+			"plugin_opts": "",
+			"plugin_args": "",
+			"remarks": "",
+			"group": "N/A"
+		}
 
 	def __parseLink(self, link):
 		_config = self.__getShadowsocksBaseConfig()
