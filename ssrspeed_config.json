@@ -1,6 +1,6 @@
 {
 	"localAddress": "127.0.0.1",
-	"localPort": 10870,
+	"localPort": 7891,
 	"excludeRemarks": [
 		"剩余流量",
 		"到期时间",

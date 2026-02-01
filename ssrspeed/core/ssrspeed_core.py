@@ -11,10 +11,6 @@ import os
 
 logger = logging.getLogger("Sub")
 
-from ..client_launcher import ShadowsocksClient as SSClient
-from ..client_launcher import ShadowsocksRClient as SSRClient
-from ..client_launcher import V2RayClient
-
 from ..config_parser import UniversalParser
 
 from ..result import ExportResult
@@ -23,7 +19,6 @@ from ..result import Sorter
 
 from ..speed_test import SpeedTest
 from ..utils import check_platform
-from ..utils.port_checker import check_port
 
 from config import config
 
@@ -31,13 +26,7 @@ lsa = [19, 5, 23, 1, 11, 25, 15, 21, 3, 17, 9, 7]
 lsn = [7, 3, 1, 9]
 domainls = ['/link/', '/sub/', '/1759/', '/v2/', 'token=']
 
-try:
-	check_port(config["localPort"])
-	print("Port {} already in use,".format(
-		config["localPort"]) + " please change the local port in ssrspeed_config.json or terminate the application.")
-	sys.exit(0)
-except (ConnectionRefusedError, socket.timeout):
-	pass
+# Port check removed - Mihomo will handle port binding
 
 
 def EX_GCD(a, b, arr):

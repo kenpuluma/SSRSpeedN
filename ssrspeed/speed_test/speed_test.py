@@ -10,9 +10,8 @@ import requests
 import concurrent.futures
 from bs4 import BeautifulSoup
 from .test_methods import SpeedTestMethods
-from ..client_launcher import ShadowsocksClient, ShadowsocksRClient, V2RayClient, TrojanClient
+from ..clash_api import MihomoClient, node_to_clash_proxy, generate_clash_config
 from ..utils.geo_ip import domain2ip, parseLocation, IPLoc
-from ..utils.port_checker import check_port
 from config import config
 
 logger = logging.getLogger("Sub")
@@ -112,10 +111,15 @@ class SpeedTest(object):
         self.outboundGeoIP = self.__baseResult["OutIP"]
         # init thread pool
         self.executor = concurrent.futures.ThreadPoolExecutor()
+        # init Mihomo client
+        self.__mihomo = None
 
     def __del__(self):
         # close the thread pool
         self.executor.shutdown()
+        # stop Mihomo
+        if self.__mihomo:
+            self.__mihomo.stop()
 
     def __getBaseResult(self):
         return copy.deepcopy(self.__baseResult)
@@ -125,46 +129,6 @@ class SpeedTest(object):
             return self.__configs.pop(0)
         except IndexError:
             return None
-
-    def __getClient(self, client_type: str):
-        if client_type == "Shadowsocks":
-            return ShadowsocksClient()
-        elif client_type == "ShadowsocksR":
-            client = ShadowsocksRClient()
-            if self.__use_ssr_cs:
-                client.useSsrCSharp = True
-            return client
-        elif client_type == "V2Ray":
-            return V2RayClient()
-        elif client_type == "Trojan":
-            return TrojanClient()
-        else:
-            return None
-
-    def __checkClientPort(self, client):
-        # Check client started
-        client_started = False
-        for attempt in range(3):
-            time.sleep(1)
-            if client.check_alive():
-                client_started = True
-                break
-        # Check port
-        port_opened = False
-        for attempt in range(3):
-            time.sleep(1)
-            try:
-                check_port(LOCAL_PORT)
-                port_opened = True
-                break
-            except:
-                pass
-        if client_started and port_opened:
-            logger.info("Client started.")
-            return True
-        else:
-            logger.error("Failed to start client.")
-            return False
 
     def resetStatus(self):
         self.__results = []
@@ -502,10 +466,13 @@ class SpeedTest(object):
         self.__results = []
         total_nodes = len(self.__configs)
         done_nodes = 0
+        
+        # Start Mihomo once for all tests
+        self.__mihomo = MihomoClient(socks_port=LOCAL_PORT)
+        
         node = self.__getNextConfig()
         while node:
             done_nodes += 1
-            client = None
             item = self.__getBaseResult()
             try:
                 cfg = node.config
@@ -521,14 +488,32 @@ class SpeedTest(object):
                         tol=total_nodes
                     )
                 )
-                client = self.__getClient(node.node_type)
-                if not client:
-                    logger.warning(f"Unknown Node Type: {node.node_type}")
+                
+                # Convert node to Clash proxy config
+                try:
+                    clash_proxy = node_to_clash_proxy(node)
+                    clash_config = generate_clash_config(clash_proxy, socks_port=LOCAL_PORT)
+                except Exception as e:
+                    logger.error(f"Failed to convert node to Clash config: {e}")
                     continue
+                
+                # Start or update Mihomo with new config
+                if not self.__mihomo.process:
+                    if not self.__mihomo.start(clash_config):
+                        logger.error("Failed to start Mihomo")
+                        continue
+                else:
+                    if not self.__mihomo.update_config(clash_config):
+                        logger.error("Failed to update Mihomo config")
+                        continue
+                
+                # Test proxy delay via Mihomo API
+                delay = self.__mihomo.test_delay(clash_proxy["name"], timeout=10000)
+                if delay <= 0:
+                    logger.warning(f"Proxy {clash_proxy['name']} unreachable (delay: {delay})")
+                    # Still continue with other tests even if delay test fails
+                
                 self.__current = item
-                client.startClient(cfg)
-                if not self.__checkClientPort(client):
-                    continue
 
                 # geo
                 inbound_info = None
@@ -615,10 +600,13 @@ class SpeedTest(object):
                 logger.exception("\n")
             finally:
                 self.__results.append(item)
-                if client:
-                    client.stopClient()
                 node = self.__getNextConfig()
-                time.sleep(1)
+        
+        # Stop Mihomo after all tests
+        if self.__mihomo:
+            self.__mihomo.stop()
+            self.__mihomo = None
+        
         self.__current = {}
 
     def webPageSimulation(self):
