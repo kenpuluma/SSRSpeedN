@@ -5,6 +5,7 @@ import time
 import requests
 import logging
 import os
+import platform
 import tempfile
 from .config_generator import save_clash_config
 
@@ -26,17 +27,12 @@ class MihomoClient:
             api_port: External controller API port (default: 9090)
             socks_port: SOCKS5 proxy port (default: 7891)
         """
-        # Check for mihomo in multiple locations
+        # Check for mihomo binary based on OS
         if not os.path.exists(mihomo_bin):
-            # Try clients/mihomo/mihomo.exe (Windows)
-            if os.path.exists("./clients/mihomo/mihomo.exe"):
+            if platform.system() == "Windows":
                 mihomo_bin = "./clients/mihomo/mihomo.exe"
-            # Try mihomo.exe in current directory
-            elif os.path.exists("./mihomo.exe"):
-                mihomo_bin = "./mihomo.exe"
-            # Try mihomo in PATH
-            elif os.path.exists("mihomo"):
-                mihomo_bin = "mihomo"
+            else:
+                mihomo_bin = "./clients/mihomo/mihomo"
         
         self.mihomo_bin = mihomo_bin
         self.api_port = api_port

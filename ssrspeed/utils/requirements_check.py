@@ -19,7 +19,7 @@ class RequirementsCheck(object):
 
 		self.__linuxRequire = {
 			"Mihomo":[
-				"mihomo"
+				"./clients/mihomo/mihomo"
 			]
 		}
 
@@ -46,23 +46,5 @@ class RequirementsCheck(object):
 
 	def __linuxCheck(self):
 		self.__checks(self.__linuxRequire)
-		self.__linuxCheckMihomo()	
-
-	def __linuxCheckMihomo(self):
-		"""Check if Mihomo is available in PATH"""
-		mihomo_found = False
-		for cmdpath in os.environ["PATH"].split(":"):
-			if (not os.path.isdir(cmdpath)):
-				continue
-			for filename in os.listdir(cmdpath):
-				if (filename == "mihomo"):
-					logger.info("Mihomo found {}".format(os.path.join(cmdpath,"mihomo")))
-					mihomo_found = True
-					break
-			if mihomo_found:
-				break
-		if (not mihomo_found):
-			logger.warn("Mihomo not found in PATH !!!")
-		return mihomo_found
 
 
