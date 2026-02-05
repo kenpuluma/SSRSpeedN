@@ -28,13 +28,6 @@ def setArgsListCallback(option,opt_str,value,parser):
 
 def setOpts(parser):
 	parser.add_option(
-		"-c","--config",
-		action="store",
-		dest="guiConfig",
-		default="",
-		help="Load configurations from file."
-		)
-	parser.add_option(
 		"-u","--url",
 		action="store",
 		dest="url",

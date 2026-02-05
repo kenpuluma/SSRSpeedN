@@ -57,8 +57,7 @@ if (__name__ == "__main__"):
 		logger.critical("Your system does not supported. Please contact developer.")
 		sys.exit(1)
 
-	CONFIG_LOAD_MODE = 0  # 0 for import result, 1 for guiconfig, 2 for subscription url, 3 for url file
-	CONFIG_FILENAME = ""
+	CONFIG_LOAD_MODE = 0  # 0 for import result, 1 for subscription url, 2 for url file
 	CONFIG_URL = ""
 	CONFIG_URL_FILENAME = ""
 	IMPORT_FILENAME = ""
@@ -104,14 +103,11 @@ if (__name__ == "__main__"):
 
 	if (options.import_file):
 		CONFIG_LOAD_MODE = 0
-	elif (options.guiConfig):
-		CONFIG_LOAD_MODE = 1
-		CONFIG_FILENAME = options.guiConfig
 	elif(options.url):
-		CONFIG_LOAD_MODE = 2
+		CONFIG_LOAD_MODE = 1
 		CONFIG_URL = options.url
 	elif (options.url_filename):
-		CONFIG_LOAD_MODE = 3
+		CONFIG_LOAD_MODE = 2
 		CONFIG_URL_FILENAME = options.url_filename
 	else:
 		logger.error("No config input, exiting...")
@@ -156,13 +152,7 @@ if (__name__ == "__main__"):
 		sc.import_and_export(IMPORT_FILENAME)
 		sys.exit(0)
 
-	if (CONFIG_LOAD_MODE == 1):
-		sc.console_setup(
-			RESULT_IMAGE_COLOR,
-			SORT_METHOD,
-			cfg_filename=CONFIG_FILENAME
-		)
-	elif (CONFIG_LOAD_MODE == 3):
+	if (CONFIG_LOAD_MODE == 2):
 		sc.console_setup(
 			RESULT_IMAGE_COLOR,
 			SORT_METHOD,

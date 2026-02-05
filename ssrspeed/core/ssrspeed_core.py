@@ -106,13 +106,6 @@ class SSRSpeedCore(object):
 			return self.__generate_web_configs(parser.nodes)
 		return []
 
-	def web_read_config_file(self, filename) -> list:
-		parser = UniversalParser()
-		if parser:
-			parser.read_gui_config(filename)
-			return self.__generate_web_configs(parser.nodes)
-		return []
-
 	def web_setup(self, **kwargs):
 		self.colors = kwargs.get("colors", "origin")
 		self.sortMethod = kwargs.get("sortMethod", "")
@@ -128,15 +121,12 @@ class SSRSpeedCore(object):
 					  color: str = "origin",
 					  sort_method: str = "",
 					  url: str = "",
-					  url_filename: str = "",
-					  cfg_filename: str = ""
+					  url_filename: str = ""
 					  ):
 		self.sortMethod = sort_method
 		self.colors = color
 		if self.__parser:
-			if cfg_filename:
-				self.__parser.read_gui_config(cfg_filename)
-			elif url_filename:
+			if url_filename:
 				raw_data = ""
 				with open(url_filename, "r", encoding="utf-8") as f:
 					raw_data = f.read()
@@ -147,7 +137,7 @@ class SSRSpeedCore(object):
 					url = decrypt(url)
 				self.__parser.read_subscription(url.split(" "))
 			else:
-				raise ValueError("Subscription URL or configuration file must be set !")
+				raise ValueError("Subscription URL or URL file must be set !")
 
 	def start_test(self):
 		self.__timeStampStart = time.time()
