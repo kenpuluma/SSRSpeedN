@@ -90,48 +90,6 @@ def setOpts(parser):
 		help="Exclude nodes by remarks using keyword."
 	)
 	parser.add_option(
-		"-g",
-		action="store",
-		dest="group_override",
-		default="",
-		help="Manually set group."
-	)
-	parser.add_option(
-		"-y","--yes",
-		action="store_true",
-		dest="confirmation",
-		default=False,
-		help="Skip node list confirmation before test."
-		)
-	parser.add_option(
-		"-C","--color",
-		action="store",
-		dest="result_color",
-		default="",
-		help="Set the colors when exporting images."
-		)
-	parser.add_option(
-		"-s","--sort",
-		action="store",
-		dest="sort_method",
-		default="",
-		help="Select sort method in [ping,rping], default not sorted."
-		)
-	parser.add_option(
-		"-i","--import",
-		action="store",
-		dest="import_file",
-		default="",
-		help="Import test result from json file and export it."
-		)
-	parser.add_option(
-		"--skip-requirements-check",
-		action="store_true",
-		dest="skip_requirements_check",
-		default=False,
-		help="Skip requirements check."
-		)
-	parser.add_option(
 		"--debug",
 		action="store_true",
 		dest="debug",

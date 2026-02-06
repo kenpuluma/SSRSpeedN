@@ -57,23 +57,19 @@ if (__name__ == "__main__"):
 		logger.critical("Your system does not supported. Please contact developer.")
 		sys.exit(1)
 
-	CONFIG_LOAD_MODE = 0  # 0 for import result, 1 for subscription url, 2 for url file
 	CONFIG_URL = ""
 	CONFIG_URL_FILENAME = ""
-	IMPORT_FILENAME = ""
 	FILTER_KEYWORD = []
 	FILTER_GROUP_KEYWORD = []
 	FILTER_REMARK_KEYWORD = []
 	EXCLUDE_KEYWORD = []
 	EXCLUDE_GROUP_KEYWORD = []
 	EXCLUDE_REMARK_KEYWORD = []
-	SORT_METHOD = ""
-	RESULT_IMAGE_COLOR = "origin"
-	
+
 	options, args = cli_cfg.init(VERSION)
 
 	print("****** SSRSpeedN Connectivity Test ******")
-	print("Mihomo delay + Streaming + NAT detection")
+	print("Ping test + Streaming + NAT detection")
 	print("*****************************************")
 
 	if (options.debug):
@@ -87,27 +83,17 @@ if (__name__ == "__main__"):
 			item.addHandler(fileHandler)
 			item.addHandler(consoleHandler)
 
-	logger.info("SSRSpeed N v{}".format(config["VERSION"]))
+	logger.info("SSRSpeed v{}".format(config["VERSION"]))
 
 	if (logger.level == logging.DEBUG):
 		logger.debug("Program running in debug mode")
 
-	if not options.skip_requirements_check:
-		rc = RequirementsCheck()
-		rc.check()
-	else:
-		logger.warn("Requirements check skipped.")
+	rc = RequirementsCheck()
+	rc.check()
 
-	if (options.result_color):
-		RESULT_IMAGE_COLOR = options.result_color
-
-	if (options.import_file):
-		CONFIG_LOAD_MODE = 0
-	elif(options.url):
-		CONFIG_LOAD_MODE = 1
+	if(options.url):
 		CONFIG_URL = options.url
 	elif (options.url_filename):
-		CONFIG_LOAD_MODE = 2
 		CONFIG_URL_FILENAME = options.url_filename
 	else:
 		logger.error("No config input, exiting...")
@@ -133,40 +119,17 @@ if (__name__ == "__main__"):
 			str(EXCLUDE_KEYWORD), str(EXCLUDE_GROUP_KEYWORD), str(EXCLUDE_REMARK_KEYWORD)
 		)
 	)
-	
-	if (options.sort_method):
-		sm = options.sort_method
-		if (sm == "ping"):
-			SORT_METHOD = "PING"
-		elif(sm == "rping"):
-			SORT_METHOD = "REVERSE_PING"
-		else:
-			logger.error("Sort method %s not supported. Use 'ping' or 'rping'." % sm)
 
 	sc = SSRSpeedCore()
 
-	if (options.import_file and CONFIG_LOAD_MODE == 0):
-		IMPORT_FILENAME = options.import_file
-		sc.colors = RESULT_IMAGE_COLOR
-		sc.sortMethod = SORT_METHOD if SORT_METHOD else ""
-		sc.import_and_export(IMPORT_FILENAME)
-		sys.exit(0)
-
-	if (CONFIG_LOAD_MODE == 2):
+	if (CONFIG_URL_FILENAME):
 		sc.console_setup(
-			RESULT_IMAGE_COLOR,
-			SORT_METHOD,
 			url_filename=CONFIG_URL_FILENAME
 		)
 	else:
 		sc.console_setup(
-			RESULT_IMAGE_COLOR,
-			SORT_METHOD,
 			url=CONFIG_URL
 		)
-
-	if options.group_override:
-		sc.set_group(options.group_override)
 
 	sc.filter_nodes(
 		FILTER_KEYWORD,

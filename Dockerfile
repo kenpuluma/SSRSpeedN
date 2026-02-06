@@ -4,16 +4,10 @@ WORKDIR /app
 COPY . /app
 ENV CRON_FREQUENCY "*/30 * * * *"
 
-# Install cron and basic dependencies
-RUN apt-get -y update && apt-get -y install cron wget gzip
-RUN pip install -r requirements.txt
+# Install cron and dependencies
+RUN apt-get -y update && apt-get -y install cron
+RUN pip install six && pip install -r requirements.txt
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo Asia/Shanghai >/etc/timezone
-
-# Install Mihomo (Clash Meta) v1.19.14
-RUN wget https://github.com/MetaCubeX/mihomo/releases/download/v1.19.14/mihomo-linux-amd64-v1.19.14.gz \
-    && gunzip mihomo-linux-amd64-v1.19.14.gz \
-    && mv mihomo-linux-amd64-v1.19.14 /usr/local/bin/mihomo \
-    && chmod +x /usr/local/bin/mihomo
 
 # Setup cron job
 RUN { \

@@ -9,8 +9,6 @@ logger = logging.getLogger("Sub")
 
 from ..config_parser import UniversalParser
 from ..result import ExportResult
-from ..result import importResult
-from ..result import Sorter
 from ..speed_test import SpeedTest
 from ..utils import check_platform
 from config import config
@@ -70,18 +68,12 @@ def decrypt(sublink):
 
 class SSRSpeedCore(object):
 	def __init__(self):
-		self.colors = "origin"
-		self.sortMethod = ""
-
 		self.__timeStampStart = -1
 		self.__timeStampStop = -1
 		self.__parser = UniversalParser()
 		self.__stc = None
 		self.__results = []
 		self.__status = "stopped"
-
-	def set_group(self, group: str):
-		self.__parser.set_group(group)
 
 	# Web Methods
 	def web_get_status(self):
@@ -107,8 +99,7 @@ class SSRSpeedCore(object):
 		return []
 
 	def web_setup(self, **kwargs):
-		self.colors = kwargs.get("colors", "origin")
-		self.sortMethod = kwargs.get("sortMethod", "")
+		pass
 
 	def web_set_configs(self, configs: list):
 		if self.__parser:
@@ -118,13 +109,9 @@ class SSRSpeedCore(object):
 
 	# Console Methods
 	def console_setup(self,
-					  color: str = "origin",
-					  sort_method: str = "",
 					  url: str = "",
 					  url_filename: str = ""
 					  ):
-		self.sortMethod = sort_method
-		self.colors = color
 		if self.__parser:
 			if url_filename:
 				raw_data = ""
@@ -177,13 +164,7 @@ class SSRSpeedCore(object):
 		self.__parser.print_nodes()
 		logger.info("{} node(s) will be tested.".format(len(self.__parser.nodes)))
 
-	def import_and_export(self, filename, split=0):
-		self.__results = importResult(filename)
-		self.__exportResult(split, 2)
-		self.__results = []
-
 	def __exportResult(self, split=0, exportType=0):
 		er = ExportResult()
 		er.setTimeUsed(self.__timeStampStop - self.__timeStampStart)
-		er.setColors(self.colors)
-		er.export(self.__results, split, exportType, self.sortMethod)
+		er.export(self.__results, split, exportType)

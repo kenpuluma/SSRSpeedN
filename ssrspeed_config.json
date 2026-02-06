@@ -13,7 +13,7 @@
 		"username": null,
 		"password": null
 	},
-	"port": true,
+	"port": false,
 	"ntt": {
 		"enabled": true,
 		"internal_ip": "0.0.0.0",
@@ -30,19 +30,7 @@
 	"bilibili": false,
 	"tvb": false,
 	"chatgpt": true,
-	"web": {
-		"listen": "127.0.0.1",
-		"port": 10870,
-		"token": ""
-	},
 	"exportResult": {
-		"uploadResult": false,
-		"font": "./resources/fonts/SourceHanSansCN-Medium.otf",
-		"colors": [
-			{
-				"name": "origin",
-				"colors": {}
-			}
-		]
+		"font": "./resources/fonts/SourceHanSansCN-Medium.otf"
 	}
 }

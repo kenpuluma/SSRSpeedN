@@ -8,7 +8,6 @@ import logging
 
 logger = logging.getLogger("Sub")
 
-from .sorter import Sorter
 from config import config
 
 
@@ -24,19 +23,13 @@ class ExportResult(object):
 		self.__font = ImageFont.truetype(self.__config["font"], 18)
 		self.__timeUsed = "N/A"
 
-	def setColors(self, name="origin"):
-		# Colors are no longer needed for speed display
-		pass
-
 	def setTimeUsed(self, timeUsed):
 		self.__timeUsed = time.strftime("%H:%M:%S", time.gmtime(timeUsed))
 		logger.info("Time Used : {}".format(self.__timeUsed))
 
-	def export(self, result, split=0, exportType=0, sortMethod=""):
+	def export(self, result, split=0, exportType=0):
 		if not exportType:
 			self.__exportAsJson(result)
-		sorter = Sorter()
-		result = sorter.sortResult(result, sortMethod)
 		self.__exportAsPng(result)
 
 	def __getMaxWidth(self, result):
