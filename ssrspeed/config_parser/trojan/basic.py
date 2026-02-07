@@ -12,6 +12,23 @@ class TrojanParser:
     def __init__(self):
         pass
 
+    @staticmethod
+    def __get_base_config():
+        return {
+            "server": "",
+            "server_port": -1,
+            "password": "",
+            "sni": "",
+            "skip-cert-verify": False,
+            "network": "",
+            "path": "",
+            "host": "",
+            "ws-path": "",
+            "ws-headers": {},
+            "remarks": "",
+            "group": "N/A"
+        }
+
     def parse_link(self, link: str):
         if not link.startswith("trojan://"):
             logger.error("Unsupport link: {}".format(link))
@@ -31,69 +48,56 @@ class TrojanParser:
         if not link:
             return None
 
-        result = {
-            "run_type": "client",
-            "local_addr": "127.0.0.1",
-            "local_port": 10870,
-            "remote_addr": "example.com",
-            "remote_port": 443,
-            "password": ["password1"],
-            "log_level": 1,
-            "ssl": {
-                "verify": "true",
-                "verify_hostname": "true",
-                "cert": "",
-                "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
-                "cipher_tls13": "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
-                "sni": "",
-                "alpn": ["h2", "http/1.1"],
-                "reuse_session": "true",
-                "session_ticket": "false",
-                "curves": ""
-            },
-            "tcp": {
-                "no_delay": "true",
-                "keep_alive": "true",
-                "reuse_port": "false",
-                "fast_open": "false",
-                "fast_open_qlen": 20
-            },
-            "websocket": {
-                "enabled": "false",
-                "path": "",
-                "host": ""
-            },
-            "group": "N/A"
-        }
+        result = self.__get_base_config()
 
         link = percent_decode(link)
         if "#" in link:
-            link, result["remarks"] = link.split("#")
-        result["remarks"] = re.sub(r"\s|\n", "", result["remarks"])
+            link, result["remarks"] = link.split("#", 1)
+            result["remarks"] = re.sub(r"\s|\n", "", result["remarks"])
 
         password = ""
+        host_and_query = link
         if "@" in link:
-            password, link = link.split("@")
-        result["password"][0] = password
+            password, host_and_query = link.split("@", 1)
+        result["password"] = password
 
-        if "?" in link:
-            host, link = link.split("?")
-        result["server"], result["server_port"] = host.split(":")
+        host = host_and_query
+        query = ""
+        if "?" in host_and_query:
+            host, query = host_and_query.split("?", 1)
+        if ":" not in host:
+            logger.error("Invalid trojan link (missing host/port): {}".format(link))
+            return None
+        result["server"], result["server_port"] = host.split(":", 1)
         result["server_port"] = int(re.match(r"^\d+", result["server_port"]).group(0))
 
-        result["remote_addr"] = result["server"]
-        result["remote_port"] = result["server_port"]
+        if not result["remarks"]:
+            result["remarks"] = result["server"]
 
-        if link:
-            link_args = dict(parse_qsl(link))
-            result["ssl"]["verify"] = link_args.get("allowinsecure", "") == "1"
-            logger.info(link_args.get("allowinsecure", ""))
-            result["ssl"]["sni"] = link_args.get("sni", "")
-            result["tcp"]["fast_open"] = link_args.get("tfo", "") == "1"
-            result["group"] = link_args.get("peer", "N/A")
-            # ws protocol requires host and path
-            if "type" in link_args and link_args["type"] == "ws" and "host" in link_args and "path" in link_args:
-                result["websocket"]["enabled"] = "true"
-                result["websocket"]["path"] = link_args["path"]
-                result["websocket"]["host"] = link_args["host"]
+        def _is_true(value):
+            return str(value).lower() in ("1", "true", "yes", "y", "on")
+
+        if query:
+            link_args = dict(parse_qsl(query, keep_blank_values=True))
+            if "skip-cert-verify" in link_args:
+                result["skip-cert-verify"] = _is_true(link_args.get("skip-cert-verify"))
+            elif "allowinsecure" in link_args:
+                result["skip-cert-verify"] = _is_true(link_args.get("allowinsecure"))
+            elif "allowInsecure" in link_args:
+                result["skip-cert-verify"] = _is_true(link_args.get("allowInsecure"))
+            result["sni"] = link_args.get("sni", "") or link_args.get("peer", "")
+            result["group"] = link_args.get("group", link_args.get("peer", "N/A"))
+
+            network = link_args.get("type", "")
+            if network in ("ws", "grpc", "h2", "tcp"):
+                result["network"] = network
+
+            if link_args.get("path"):
+                result["path"] = link_args["path"]
+                if network == "ws":
+                    result["ws-path"] = link_args["path"]
+            if link_args.get("host"):
+                result["host"] = link_args["host"]
+                if network == "ws":
+                    result["ws-headers"] = {"Host": link_args["host"]}
         return result

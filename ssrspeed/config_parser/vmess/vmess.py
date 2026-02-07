@@ -12,6 +12,26 @@ class ParserVmess:
     def __init__(self):
         self.__decoded_configs = []
 
+    @staticmethod
+    def __get_base_config():
+        return {
+            "server": "",
+            "server_port": -1,
+            "id": "",
+            "alterId": 0,
+            "security": "",
+            "type": "",
+            "path": "",
+            "network": "",
+            "allowInsecure": False,
+            "headers": {},
+            "tls-host": "",
+            "host": "",
+            "tls": "",
+            "remarks": "",
+            "group": "N/A"
+        }
+
     def parse_subs_config(self, raw_link):
         link = raw_link[8:]
         link_decoded = b64plus.decode(link).decode("utf-8")
@@ -20,14 +40,15 @@ class ParserVmess:
         except json.JSONDecodeError:
             return None
         try:
+            _config = self.__get_base_config()
             cfg_version = str(_conf.get("v", "1"))
             server = _conf["add"]
             port = int(_conf["port"])
             _type = _conf.get("type", "none")  # Obfs type
             uuid = _conf["id"]
-            aid = int(_conf["aid"])
+            aid = int(_conf.get("aid", 0))
             net = _conf["net"]
-            group = "N/A"
+            group = _conf.get("group", "N/A")
             path = ""
             host = ""
             if cfg_version == "2":
@@ -52,20 +73,19 @@ class ParserVmess:
                     aid, net, host, tls, remarks, group
                 )
             )
-            _config = {
-                "remarks": remarks,
-                "server": server,
-                "server_port": port,
-                "id": uuid,
-                "alterId": aid,
-                "security": security,
-                "type": _type,
-                "path": path,
-                "network": net,
-                "tls-host": tls_host,
-                "host": host,
-                "tls": tls
-            }
+            _config["remarks"] = remarks
+            _config["group"] = group
+            _config["server"] = server
+            _config["server_port"] = port
+            _config["id"] = uuid
+            _config["alterId"] = aid
+            _config["security"] = security
+            _config["type"] = _type
+            _config["path"] = path
+            _config["network"] = net
+            _config["tls-host"] = tls_host
+            _config["host"] = host
+            _config["tls"] = tls
             return _config
         except:
             logger.exception("Parse {} failed.(V2RayN Method)".format(raw_link))

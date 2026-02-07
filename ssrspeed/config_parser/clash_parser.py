@@ -141,53 +141,44 @@ class ParserClash:
 		}
 
 	def __convert_trojan_cfg(self, cfg):
-		# ws-opts: {path: download, headers: {Host: sg.fire-cloud-pan.cf}}}
-		password = cfg["password"]
 		server = cfg["server"]
-		remarks = cfg.get("name",server)
-		group = cfg.get("peer",'N/A')
-		sni = cfg["sni"]
 		port = int(cfg["port"])
-		allowInsecure = True if (cfg.get("skip-cert-verify",False)) else False
-		_type = cfg.get("type","none") #Obfs type	
-		logger.debug(cfg)
-		return {
-			"run_type": "client",
-			"local_addr": "127.0.0.1",
-			"local_port": 10870,
-			"remote_addr": server,
-			"remote_port": port,
-			"password": [
-				password
-			],
-			"log_level": 1,
-			"ssl": {
-				"verify": allowInsecure,
-				"verify_hostname": "true",
-				"cert": "",
-				"cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
-				"cipher_tls13": "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
-				"sni": sni,
-				"alpn": [
-					"h2",
-					"http/1.1"
-				],
-				"reuse_session": "true",
-				"session_ticket": "false",
-				"curves": ""
-			},
-			"tcp": {
-				"no_delay": "true",
-				"keep_alive": "true",
-				"reuse_port": "false",
-				"fast_open": "false",
-				"fast_open_qlen": 20
-			},
-			"group":group,
-			"remarks":remarks,
-			"server":server,
-			"server_port":port,
+		password = cfg["password"]
+		remarks = cfg.get("name", server)
+		group = cfg.get("group", cfg.get("peer", "N/A"))
+
+		result = {
+			"server": server,
+			"server_port": port,
+			"password": password,
+			"sni": cfg.get("sni", "") or cfg.get("servername", "") or cfg.get("peer", ""),
+			"skip-cert-verify": True if cfg.get("skip-cert-verify", False) else False,
+			"network": cfg.get("network", ""),
+			"remarks": remarks,
+			"group": group
 		}
+
+		ws_opts = cfg.get("ws-opts", {})
+		if cfg.get("ws-path"):
+			result["ws-path"] = cfg.get("ws-path")
+		elif ws_opts.get("path"):
+			result["ws-path"] = ws_opts.get("path")
+		if cfg.get("ws-headers"):
+			result["ws-headers"] = cfg.get("ws-headers")
+		elif ws_opts.get("headers"):
+			result["ws-headers"] = ws_opts.get("headers")
+
+		h2_opts = cfg.get("h2-opts", {})
+		if h2_opts.get("path"):
+			result["path"] = h2_opts.get("path")
+		if h2_opts.get("host"):
+			result["host"] = h2_opts.get("host")
+
+		grpc_opts = cfg.get("grpc-opts", {})
+		if grpc_opts.get("grpc-service-name"):
+			result["path"] = grpc_opts.get("grpc-service-name")
+
+		return result
 
 	def parse_config(self, clash_cfg):
 		clash_cfg = yaml.load(clash_cfg, Loader=yaml.FullLoader)
@@ -216,5 +207,3 @@ class ParserClash:
 				self.parse_config(f.read())
 			except:
 				logger.exception("Not Clash config.")
-
-

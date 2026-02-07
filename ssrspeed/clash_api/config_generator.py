@@ -53,35 +53,47 @@ def node_to_clash_proxy(node):
         
     elif node_type == "V2Ray":
         # VMess protocol
+        net = cfg.get("network") or cfg.get("net")
+        tls_raw = cfg.get("tls")
+        tls_enabled = tls_raw in (True, 1, "1", "true", "tls")
         proxy.update({
             "type": "vmess",
             "uuid": cfg["id"],
-            "alterId": cfg.get("alterId", 0),
-            "cipher": cfg.get("cipher", "auto"),
+            "alterId": int(cfg.get("alterId", 0)),
+            "cipher": cfg.get("cipher") or cfg.get("security", "auto"),
             "udp": cfg.get("udp", True),
         })
-        # Network type
-        if cfg.get("net"):
-            proxy["network"] = cfg["net"]
-        # TLS
-        if cfg.get("tls"):
+        # TLS / SNI / cert verification
+        if tls_enabled:
             proxy["tls"] = True
-            if cfg.get("sni"):
-                proxy["servername"] = cfg["sni"]
+            servername = cfg.get("sni") or cfg.get("tls-host") or cfg.get("host")
+            if servername:
+                proxy["servername"] = servername
+        if cfg.get("allowInsecure"):
+            proxy["skip-cert-verify"] = True
+        # Network type
+        if net:
+            proxy["network"] = net
         # WebSocket
-        if cfg.get("net") == "ws":
+        if net == "ws":
+            ws_opts = {}
             if cfg.get("path"):
-                proxy["ws-path"] = cfg["path"]
+                ws_opts["path"] = cfg["path"]
             if cfg.get("host"):
-                proxy["ws-headers"] = {"Host": cfg["host"]}
+                ws_opts["headers"] = {"Host": cfg["host"]}
+            if ws_opts:
+                proxy["ws-opts"] = ws_opts
         # HTTP/2
-        elif cfg.get("net") == "h2":
+        elif net == "h2":
+            h2_opts = {}
             if cfg.get("path"):
-                proxy["h2-opts"] = {"path": cfg["path"]}
+                h2_opts["path"] = cfg["path"]
             if cfg.get("host"):
-                proxy["h2-opts"]["host"] = [cfg["host"]]
+                h2_opts["host"] = cfg["host"]
+            if h2_opts:
+                proxy["h2-opts"] = h2_opts
         # gRPC
-        elif cfg.get("net") == "grpc":
+        elif net == "grpc":
             if cfg.get("path"):
                 proxy["grpc-opts"] = {"grpc-service-name": cfg["path"]}
                 
@@ -97,13 +109,38 @@ def node_to_clash_proxy(node):
         # Skip cert verify
         if cfg.get("skip-cert-verify"):
             proxy["skip-cert-verify"] = True
+        # Network / transport
+        network = cfg.get("network")
+        if network:
+            proxy["network"] = network
         # WebSocket
-        if cfg.get("network") == "ws":
-            proxy["network"] = "ws"
-            if cfg.get("ws-path"):
-                proxy["ws-opts"] = {"path": cfg["ws-path"]}
-            if cfg.get("ws-headers"):
-                proxy["ws-opts"]["headers"] = cfg["ws-headers"]
+        if network == "ws":
+            ws_opts = {}
+            ws_path = cfg.get("ws-path") or cfg.get("path")
+            ws_headers = cfg.get("ws-headers")
+            host = cfg.get("host")
+            if ws_path:
+                ws_opts["path"] = ws_path
+            if ws_headers:
+                ws_opts["headers"] = ws_headers
+            elif host:
+                ws_opts["headers"] = {"Host": host}
+            if ws_opts:
+                proxy["ws-opts"] = ws_opts
+        # gRPC
+        elif network == "grpc":
+            service_name = cfg.get("grpc-service-name") or cfg.get("path")
+            if service_name:
+                proxy["grpc-opts"] = {"grpc-service-name": service_name}
+        # HTTP/2
+        elif network == "h2":
+            h2_opts = {}
+            if cfg.get("path"):
+                h2_opts["path"] = cfg["path"]
+            if cfg.get("host"):
+                h2_opts["host"] = cfg["host"]
+            if h2_opts:
+                proxy["h2-opts"] = h2_opts
     else:
         logger.warning(f"Unknown node type: {node_type}, using as-is")
         
