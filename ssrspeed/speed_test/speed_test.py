@@ -31,6 +31,7 @@ PROXIES = {
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36"
 }
+MIHOMO_GROUP_NAME = "GLOBAL"
 
 
 class SpeedTest(object):
@@ -333,79 +334,115 @@ class SpeedTest(object):
             item["ntt"]["internal_ip"] = nat[3]
             item["ntt"]["internal_port"] = nat[4]
 
+    def __prepare_node_entry(self, node):
+        item = self.__getBaseResult()
+        cfg = node.config
+        cfg["server_port"] = int(cfg["server_port"])
+        item["group"] = cfg["group"]
+        item["remarks"] = cfg["remarks"]
+        item["port"] = cfg["server_port"]
+        clash_proxy = node_to_clash_proxy(node)
+        return {
+            "node": node,
+            "cfg": cfg,
+            "item": item,
+            "proxy": clash_proxy,
+        }
+
     def __start_test(self):
         self.__results = []
-        total_nodes = len(self.__configs)
-        done_nodes = 0
-        
-        # Start Mihomo once for all tests
-        self.__mihomo = MihomoClient(socks_port=LOCAL_PORT)
-        
+        prepared_nodes = []
+
         node = self.__getNextConfig()
         while node:
-            done_nodes += 1
-            item = self.__getBaseResult()
-            self.__resetStreamVars()
-            
             try:
-                cfg = node.config
-                cfg["server_port"] = int(cfg["server_port"])
-                item["group"] = cfg["group"]
-                item["remarks"] = cfg["remarks"]
-                item["port"] = cfg["server_port"]
+                prepared_nodes.append(self.__prepare_node_entry(node))
+            except Exception as e:
+                logger.error(f"Failed to prepare node for testing: {e}")
+                item = self.__getBaseResult()
+                try:
+                    cfg = node.config
+                    item["group"] = cfg.get("group", "N/A")
+                    item["remarks"] = cfg.get("remarks", "N/A")
+                    item["port"] = int(cfg.get("server_port", 0))
+                except Exception:
+                    pass
+                self.__results.append(item)
+            node = self.__getNextConfig()
+
+        total_nodes = len(prepared_nodes)
+        if total_nodes == 0:
+            logger.warning("No valid nodes to test.")
+            self.__current = {}
+            return
+
+        # Start Mihomo once with all proxies loaded so delay checks can run in batch.
+        self.__mihomo = MihomoClient(socks_port=LOCAL_PORT)
+
+        try:
+            clash_config = generate_clash_config(
+                [entry["proxy"] for entry in prepared_nodes],
+                socks_port=LOCAL_PORT,
+                group_name=MIHOMO_GROUP_NAME
+            )
+        except Exception as e:
+            logger.error(f"Failed to generate Clash config: {e}")
+            self.__results.extend(entry["item"] for entry in prepared_nodes)
+            return
+
+        if not self.__mihomo.start(clash_config):
+            logger.error("Failed to start Mihomo")
+            self.__results.extend(entry["item"] for entry in prepared_nodes)
+            return
+
+        delay_map = self.__mihomo.test_group_delay(MIHOMO_GROUP_NAME, timeout=10000)
+        if not delay_map:
+            logger.warning("Batch group delay unavailable, falling back to per-proxy delay checks.")
+
+        for entry in prepared_nodes:
+            proxy_name = entry["proxy"]["name"]
+            delay = delay_map.get(proxy_name)
+            if not isinstance(delay, (int, float)):
+                delay = self.__mihomo.test_delay(proxy_name, timeout=10000)
+            if delay > 0:
+                entry["item"]["ping"] = int(delay)
+                entry["item"]["loss"] = 0
+                logger.info(f"Proxy {proxy_name} delay: {int(delay)}ms")
+            else:
+                logger.warning(f"Proxy {proxy_name} unreachable")
+                entry["item"]["ping"] = 0
+                entry["item"]["loss"] = 1
+
+        for done_nodes, entry in enumerate(prepared_nodes, start=1):
+            item = entry["item"]
+            clash_proxy = entry["proxy"]
+            nat_info = ""
+            nat = None
+            self.__resetStreamVars()
+
+            try:
                 logger.info(
                     "Starting test {group} - {remarks} [{cur}/{tol}]".format(
-                        group=cfg["group"],
-                        remarks=cfg["remarks"],
+                        group=item["group"],
+                        remarks=item["remarks"],
                         cur=done_nodes,
                         tol=total_nodes
                     )
                 )
-                
-                # Convert node to Clash proxy config
-                try:
-                    clash_proxy = node_to_clash_proxy(node)
-                    clash_config = generate_clash_config(clash_proxy, socks_port=LOCAL_PORT)
-                except Exception as e:
-                    logger.error(f"Failed to convert node to Clash config: {e}")
-                    self.__results.append(item)
-                    node = self.__getNextConfig()
-                    continue
-                
-                # Start or update Mihomo with new config
-                if not self.__mihomo.process:
-                    if not self.__mihomo.start(clash_config):
-                        logger.error("Failed to start Mihomo")
-                        self.__results.append(item)
-                        node = self.__getNextConfig()
-                        continue
-                else:
-                    if not self.__mihomo.update_config(clash_config):
-                        logger.error("Failed to update Mihomo config")
-                        self.__results.append(item)
-                        node = self.__getNextConfig()
-                        continue
-                
-                # Test proxy delay via Mihomo API (primary ping method)
-                delay = self.__mihomo.test_delay(clash_proxy["name"], timeout=10000)
-                if delay > 0:
-                    item["ping"] = delay  # milliseconds
-                    item["loss"] = 0
-                    logger.info(f"Proxy {clash_proxy['name']} delay: {delay}ms")
-                else:
-                    logger.warning(f"Proxy {clash_proxy['name']} unreachable")
-                    item["ping"] = 0
-                    item["loss"] = 1
-                
+
                 self.__current = item
+
+                if item["loss"] == 0:
+                    if not self.__mihomo.select_proxy(MIHOMO_GROUP_NAME, clash_proxy["name"]):
+                        logger.error(f"Failed to select proxy {clash_proxy['name']}")
+                        item["loss"] = 1
+                        item["ping"] = 0
 
                 # stream detection
                 if STREAM_TEST and item["loss"] == 0:
                     self.__getStream()
                 
                 # nat type test
-                nat_info = ""
-                nat = None
                 if NAT_TEST["enabled"] and item["loss"] == 0:
                     nat = self.__natTypeTest()
                     if nat[0]:
@@ -426,12 +463,10 @@ class SpeedTest(object):
                         nat_info
                     )
                 )
-                
             except Exception:
                 logger.exception("\n")
             finally:
                 self.__results.append(item)
-                node = self.__getNextConfig()
         
         # Stop Mihomo after all tests
         if self.__mihomo:

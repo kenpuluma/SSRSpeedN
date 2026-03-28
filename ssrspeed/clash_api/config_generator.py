@@ -147,18 +147,27 @@ def node_to_clash_proxy(node):
     return proxy
 
 
-def generate_clash_config(proxy, socks_port=7891, api_port=9090):
+def generate_clash_config(proxies, socks_port=7891, api_port=9090, group_name="GLOBAL"):
     """
-    Generate complete Clash configuration with single proxy.
+    Generate complete Clash configuration.
     
     Args:
-        proxy: Clash proxy dict from node_to_clash_proxy()
+        proxies: Clash proxy dict or list of proxy dicts from node_to_clash_proxy()
         socks_port: SOCKS5 proxy port (default: 7891)
         api_port: External controller API port (default: 9090)
+        group_name: Proxy group name (default: "GLOBAL")
         
     Returns:
         dict: Complete Clash configuration
     """
+    if isinstance(proxies, dict):
+        proxies = [proxies]
+
+    if not proxies:
+        raise ValueError("At least one proxy is required to generate Clash config")
+
+    proxy_names = [proxy["name"] for proxy in proxies]
+
     config = {
         "mixed-port": 7890,
         "socks-port": socks_port,
@@ -168,18 +177,18 @@ def generate_clash_config(proxy, socks_port=7891, api_port=9090):
         "external-controller": f"127.0.0.1:{api_port}",
         "secret": "",
         
-        "proxies": [proxy],
+        "proxies": proxies,
         
         "proxy-groups": [
             {
-                "name": "GLOBAL",
+                "name": group_name,
                 "type": "select",
-                "proxies": [proxy["name"]]
+                "proxies": proxy_names
             }
         ],
         
         "rules": [
-            "MATCH,GLOBAL"
+            f"MATCH,{group_name}"
         ]
     }
     
