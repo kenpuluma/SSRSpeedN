@@ -29,6 +29,23 @@ class UniversalParser:
         self.__nodes = []
 
     @staticmethod
+    def __parse_group_marker(line: str):
+        stripped = line.strip()
+        marker = "# group:"
+        if stripped.lower().startswith(marker):
+            return stripped[len(marker):].strip()
+        return None
+
+    @staticmethod
+    def __is_proxy_link(line: str) -> bool:
+        return (
+            line.startswith("ss://") or
+            line.startswith("ssr://") or
+            line.startswith("vmess://") or
+            line.startswith("trojan://")
+        )
+
+    @staticmethod
     def web_config_to_node(configs: list) -> list:
         result = []
         for config in configs:
@@ -143,17 +160,23 @@ class UniversalParser:
             )
 
     def read_subscription(self, urls: list):
+        current_group = None
         for url in urls:
             if not url:
                 continue
 
-            if (
-                url.startswith("ss://") or
-                url.startswith("ssr://") or
-                url.startswith("vmess://") or
-                url.startswith("trojan://")
-            ):
-                self.__nodes.extend(self.parse_links([url]))
+            marker_group = self.__parse_group_marker(url)
+            if marker_group is not None:
+                current_group = marker_group
+                logger.debug(f"Using local group marker: {current_group}")
+                continue
+
+            if self.__is_proxy_link(url):
+                parsed_nodes = self.parse_links([url])
+                if current_group:
+                    for node in parsed_nodes:
+                        node.update_config({"group": current_group})
+                self.__nodes.extend(parsed_nodes)
                 continue
 
             header = {
@@ -190,7 +213,11 @@ class UniversalParser:
                 rep = rep.strip()
                 links = (b64plus.decode(rep).decode("utf-8")).split("\n")
                 logger.debug("Base64 decode success.")
-                self.__nodes.extend(self.parse_links(links))
+                parsed_nodes = self.parse_links(links)
+                if current_group:
+                    for node in parsed_nodes:
+                        node.update_config({"group": current_group})
+                self.__nodes.extend(parsed_nodes)
                 parsed = True
             except ValueError:
                 logger.info("Base64 decode failed.")
