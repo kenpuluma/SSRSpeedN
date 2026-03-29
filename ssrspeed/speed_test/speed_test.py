@@ -402,6 +402,12 @@ class SpeedTest(object):
         for entry in prepared_nodes:
             proxy_name = entry["proxy"]["name"]
             delay = delay_map.get(proxy_name)
+            if not isinstance(delay, (int, float)):
+                logger.warning(
+                    "Batch delay missing/invalid for proxy %s, marking as unreachable.",
+                    proxy_name
+                )
+                delay = 0
             if delay > 0:
                 entry["item"]["ping"] = int(delay)
                 entry["item"]["loss"] = 0
