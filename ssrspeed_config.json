@@ -20,8 +20,8 @@
 		"internal_port": 54320
 	},
 	"ping": true,
-	"stream": true,
-	"netflix": true,
+	"stream": false,
+	"netflix": false,
 	"hbo": false,
 	"disney": false,
 	"youtube": false,
@@ -29,7 +29,7 @@
 	"bahamut": false,
 	"bilibili": false,
 	"tvb": false,
-	"chatgpt": true,
+	"chatgpt": false,
 	"exportResult": {
 		"font": "./resources/fonts/SourceHanSansCN-Medium.otf"
 	}

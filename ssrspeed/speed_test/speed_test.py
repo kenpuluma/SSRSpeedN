@@ -129,7 +129,7 @@ class SpeedTest(object):
     def __getStream(self):
         urls = []
         bahamut_code = 0
-        
+
         if NETFLIX_TEST:
             urls.append("https://www.netflix.com/title/70242311")
             urls.append("https://www.netflix.com/title/70143836")
@@ -402,8 +402,6 @@ class SpeedTest(object):
         for entry in prepared_nodes:
             proxy_name = entry["proxy"]["name"]
             delay = delay_map.get(proxy_name)
-            if not isinstance(delay, (int, float)):
-                delay = self.__mihomo.test_delay(proxy_name, timeout=10000)
             if delay > 0:
                 entry["item"]["ping"] = int(delay)
                 entry["item"]["loss"] = 0
@@ -441,7 +439,7 @@ class SpeedTest(object):
                 # stream detection
                 if STREAM_TEST and item["loss"] == 0:
                     self.__getStream()
-                
+
                 # nat type test
                 if NAT_TEST["enabled"] and item["loss"] == 0:
                     nat = self.__natTypeTest()
@@ -453,7 +451,7 @@ class SpeedTest(object):
 
                 # fill result
                 self.__fillItem(item, nat)
-                
+
                 logger.info(
                     "[{}] - [{}] - Ping: [{}ms] - Loss: [{:.0f}%]{}".format(
                         item["group"],
@@ -467,12 +465,12 @@ class SpeedTest(object):
                 logger.exception("\n")
             finally:
                 self.__results.append(item)
-        
+
         # Stop Mihomo after all tests
         if self.__mihomo:
             self.__mihomo.stop()
             self.__mihomo = None
-        
+
         self.__current = {}
 
     def startTest(self):

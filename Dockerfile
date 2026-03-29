@@ -2,7 +2,7 @@ FROM python:3.10
 
 WORKDIR /app
 COPY . /app
-ENV CRON_FREQUENCY "*/30 * * * *"
+ENV CRON_FREQUENCY "*/5 * * * *"
 ENV PYTHONUNBUFFERED=1
 
 # Install cron and dependencies
