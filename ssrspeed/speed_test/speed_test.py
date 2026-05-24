@@ -334,29 +334,43 @@ class SpeedTest(object):
             item["ntt"]["internal_ip"] = nat[3]
             item["ntt"]["internal_port"] = nat[4]
 
-    def __prepare_node_entry(self, node):
+    def __build_proxy_name(self, cfg, name_counters):
+        base_name = "{}::{}".format(
+            cfg.get("group", "N/A"),
+            cfg.get("remarks", "proxy")
+        )
+        count = name_counters.get(base_name, 0) + 1
+        name_counters[base_name] = count
+        if count == 1:
+            return base_name
+        return "{}#{}".format(base_name, count)
+
+    def __prepare_node_entry(self, node, name_counters):
         item = self.__getBaseResult()
         cfg = node.config
-        cfg["server_port"] = int(cfg["server_port"])
+        cfg["server_port"] = int(cfg.get("server_port", 0))
         item["group"] = cfg["group"]
         item["remarks"] = cfg["remarks"]
         item["port"] = cfg["server_port"]
-        clash_proxy = node_to_clash_proxy(node)
+        proxy_name = self.__build_proxy_name(cfg, name_counters)
+        clash_proxy = node_to_clash_proxy(node, proxy_name=proxy_name)
         return {
             "node": node,
             "cfg": cfg,
             "item": item,
             "proxy": clash_proxy,
+            "proxy_name": proxy_name,
         }
 
     def __start_test(self):
         self.__results = []
         prepared_nodes = []
+        proxy_name_counters = {}
 
         node = self.__getNextConfig()
         while node:
             try:
-                prepared_nodes.append(self.__prepare_node_entry(node))
+                prepared_nodes.append(self.__prepare_node_entry(node, proxy_name_counters))
             except Exception as e:
                 logger.error(f"Failed to prepare node for testing: {e}")
                 item = self.__getBaseResult()
@@ -400,7 +414,7 @@ class SpeedTest(object):
             logger.warning("Batch group delay unavailable, falling back to per-proxy delay checks.")
 
         for entry in prepared_nodes:
-            proxy_name = entry["proxy"]["name"]
+            proxy_name = entry["proxy_name"]
             delay = delay_map.get(proxy_name)
             if not isinstance(delay, (int, float)):
                 logger.warning(
@@ -437,8 +451,8 @@ class SpeedTest(object):
                 self.__current = item
 
                 if item["loss"] == 0:
-                    if not self.__mihomo.select_proxy(MIHOMO_GROUP_NAME, clash_proxy["name"]):
-                        logger.error(f"Failed to select proxy {clash_proxy['name']}")
+                    if not self.__mihomo.select_proxy(MIHOMO_GROUP_NAME, entry["proxy_name"]):
+                        logger.error(f"Failed to select proxy {entry['proxy_name']}")
                         item["loss"] = 1
                         item["ping"] = 0
 

@@ -114,10 +114,7 @@ class SSRSpeedCore(object):
 					  ):
 		if self.__parser:
 			if url_filename:
-				raw_data = ""
-				with open(url_filename, "r", encoding="utf-8") as f:
-					raw_data = f.read()
-					self.__parser.read_subscription(re.split(r'\r\n|\r|\n', raw_data))
+				self.__parser.read_subscription_file(url_filename)
 			elif url:
 				r = requests.get(url)
 				if len(r.content) < 200:

@@ -1,27 +1,39 @@
 # -*- coding: utf-8 -*-
 
+from copy import deepcopy
 import yaml
 import logging
 
 logger = logging.getLogger("Sub")
 
 
-def node_to_clash_proxy(node):
+def node_to_clash_proxy(node, proxy_name=None):
     """
     Convert SSRSpeedN node to Clash proxy configuration.
     
     Args:
         node: BaseNode instance with node_type and config properties
+        proxy_name: Optional name override for Mihomo to avoid collisions
         
     Returns:
         dict: Clash proxy configuration
     """
     cfg = node.config
     node_type = node.node_type
+
+    if cfg.get("raw_proxy"):
+        proxy = deepcopy(cfg["raw_proxy"])
+        if proxy_name:
+            proxy["name"] = proxy_name
+        elif cfg.get("remarks"):
+            proxy["name"] = cfg["remarks"]
+        if "port" in proxy:
+            proxy["port"] = int(proxy["port"])
+        return proxy
     
     # Base proxy config
     proxy = {
-        "name": cfg.get("remarks", "proxy"),
+        "name": proxy_name or cfg.get("remarks", "proxy"),
         "server": cfg["server"],
         "port": int(cfg["server_port"]),
     }

@@ -4,4 +4,4 @@ from .node_shadowsocks import NodeShadowsocks
 from .node_shadowsocksr import NodeShadowsocksR
 from .node_v2ray import NodeV2Ray
 from .node_trojan import NodeTrojan
-
+from .node_mihomo import NodeMihomo
