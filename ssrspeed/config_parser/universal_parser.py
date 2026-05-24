@@ -4,6 +4,7 @@ import binascii
 from copy import deepcopy
 import logging
 import requests
+from urllib.parse import urlparse
 
 from ..utils import b64plus
 from ..types.nodes import NodeShadowsocks, NodeShadowsocksR, NodeV2Ray, NodeTrojan
@@ -44,6 +45,14 @@ class UniversalParser:
             line.startswith("vmess://") or
             line.startswith("trojan://")
         )
+
+    @staticmethod
+    def __is_subscription_url(line: str) -> bool:
+        try:
+            parsed = urlparse(line.strip())
+        except ValueError:
+            return False
+        return parsed.scheme in ("http", "https") and bool(parsed.netloc)
 
     @staticmethod
     def web_config_to_node(configs: list) -> list:
@@ -177,6 +186,10 @@ class UniversalParser:
                     for node in parsed_nodes:
                         node.update_config({"group": current_group})
                 self.__nodes.extend(parsed_nodes)
+                continue
+
+            if not self.__is_subscription_url(url):
+                logger.warning("Skipping unsupported subscription entry: %s", url)
                 continue
 
             header = {
