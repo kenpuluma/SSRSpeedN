@@ -153,6 +153,78 @@ def node_to_clash_proxy(node, proxy_name=None):
                 h2_opts["host"] = cfg["host"]
             if h2_opts:
                 proxy["h2-opts"] = h2_opts
+
+    elif node_type == "VLESS":
+        proxy.update({
+            "type": "vless",
+            "uuid": cfg["id"],
+            "udp": cfg.get("udp", True),
+        })
+        network = cfg.get("network")
+        if network:
+            proxy["network"] = network
+        # TLS / Reality / XTLS
+        security = cfg.get("security")
+        servername = cfg.get("sni") or cfg.get("host")
+        if security == "tls":
+            proxy["tls"] = True
+            if servername:
+                proxy["servername"] = servername
+        elif security == "reality":
+            proxy["tls"] = True
+            reality_opts = {}
+            if cfg.get("public_key"):
+                reality_opts["public-key"] = cfg["public_key"]
+            if cfg.get("short_id"):
+                reality_opts["short-id"] = cfg["short_id"]
+            if reality_opts:
+                proxy["reality-opts"] = reality_opts
+            if servername:
+                proxy["servername"] = servername
+        elif security == "xtls":
+            proxy["tls"] = True
+            if servername:
+                proxy["servername"] = servername
+        if cfg.get("allowInsecure"):
+            proxy["skip-cert-verify"] = True
+        if cfg.get("flow"):
+            proxy["flow"] = cfg["flow"]
+        if cfg.get("fingerprint"):
+            proxy["client-fingerprint"] = cfg["fingerprint"]
+        if cfg.get("alpn"):
+            proxy["alpn"] = cfg["alpn"]
+        # WebSocket
+        if network == "ws":
+            ws_opts = {}
+            if cfg.get("path"):
+                ws_opts["path"] = cfg["path"]
+            if cfg.get("host"):
+                ws_opts["headers"] = {"Host": cfg["host"]}
+            if ws_opts:
+                proxy["ws-opts"] = ws_opts
+        # gRPC
+        elif network == "grpc":
+            service_name = cfg.get("service_name") or cfg.get("path")
+            if service_name:
+                proxy["grpc-opts"] = {"grpc-service-name": service_name}
+        # HTTP/2
+        elif network == "h2":
+            h2_opts = {}
+            if cfg.get("path"):
+                h2_opts["path"] = cfg["path"]
+            if cfg.get("host"):
+                h2_opts["host"] = cfg["host"]
+            if h2_opts:
+                proxy["h2-opts"] = h2_opts
+        # HTTP obfs
+        elif network == "http":
+            http_opts = {}
+            if cfg.get("path"):
+                http_opts["path"] = [cfg["path"]]
+            if cfg.get("host"):
+                http_opts["headers"] = {"Host": [cfg["host"]]}
+            if http_opts:
+                proxy["http-opts"] = http_opts
     else:
         logger.warning(f"Unknown node type: {node_type}, using as-is")
         

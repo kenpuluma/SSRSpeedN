@@ -10,12 +10,13 @@ import yaml
 from urllib.parse import urlparse
 
 from ..utils import b64plus
-from ..types.nodes import NodeMihomo, NodeShadowsocks, NodeShadowsocksR, NodeV2Ray, NodeTrojan
+from ..types.nodes import NodeMihomo, NodeShadowsocks, NodeShadowsocksR, NodeV2Ray, NodeTrojan, NodeVLESS
 from .ss import ParserShadowsocksBasic, ParserShadowsocksSIP002
 from .ssr import ParserShadowsocksR
 from .vmess import ParserVmess
 from .node_filter import NodeFilter
 from .trojan import TrojanParser
+from .vless import ParserVless
 
 from config import config
 
@@ -45,7 +46,8 @@ class UniversalParser:
             line.startswith("ss://") or
             line.startswith("ssr://") or
             line.startswith("vmess://") or
-            line.startswith("trojan://")
+            line.startswith("trojan://") or
+            line.startswith("vless://")
         )
 
     @staticmethod
@@ -80,6 +82,8 @@ class UniversalParser:
                 result.append(NodeV2Ray(config["config"]))
             elif _type == "Trojan":
                 result.append(NodeTrojan(config["config"]))
+            elif _type == "VLESS":
+                result.append(NodeVLESS(config["config"]))
             elif _type == "Mihomo":
                 result.append(NodeMihomo(config["config"]))
             else:
@@ -169,6 +173,18 @@ class UniversalParser:
                     pass
                 if cfg:
                     node = NodeTrojan(cfg)
+            elif link[:8] == "vless://":
+                cfg = None
+                logger.info("Try VLESS Parser.")
+                pv_vless = ParserVless()
+                try:
+                    cfg = pv_vless.parse_link(link)
+                except ValueError:
+                    pass
+                if cfg:
+                    node = NodeVLESS(cfg)
+                else:
+                    logger.warning(f"Invalid vless link {link}")
             else:
                 logger.warning(f"Unsupport link: {link}")
 
