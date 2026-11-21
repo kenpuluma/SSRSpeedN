@@ -33,8 +33,10 @@ class NodeFilter:
             server2 = _item.get("server", "")
             port1 = item.get("server_port", item.get("port", 0))
             port2 = _item.get("server_port", _item.get("port", 0))
+            sni1 = self.__get_sni(item)
+            sni2 = self.__get_sni(_item)
             if server1 and server2 and port1 and port2:
-                if server1 == server2 and port1 == port2:
+                if server1 == server2 and port1 == port2 and sni1 == sni2:
                     logger.warn("{} - {} ({}:{}) already in list.".format(
                         item.get("group", "N/A"),
                         item.get("remarks", "N/A"),
@@ -45,6 +47,13 @@ class NodeFilter:
             else:
                 return True
         return False
+
+    @staticmethod
+    def __get_sni(item: dict):
+        return str(
+            item.get("sni", "") or item.get("servername", "") or
+            item.get("tls-host", "") or item.get("peer", "")
+        ).strip().lower()
 
     def __filter_group(self, gkwl):
         _list = []
