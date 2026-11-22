@@ -120,6 +120,7 @@ class UniversalParser:
             "remarks": remarks,
             "server": server,
             "server_port": server_port,
+            "sni": proxy_copy.get("sni", "") or proxy_copy.get("servername", "") or proxy_copy.get("peer", ""),
             "raw_proxy": proxy_copy
         })
 
